@@ -13,7 +13,7 @@ if errorlevel 1 (
 
 REM Find the highest v* tag (version-sorted, descending)
 set "latest="
-for /f "delims=" %%i in ('git tag --sort=-version:refname "v*" 2^>nul') do (
+for /f "delims=" %%i in ('git tag --list "v*" --sort=-version:refname 2^>nul') do (
     set "latest=%%i"
     goto :found
 )
