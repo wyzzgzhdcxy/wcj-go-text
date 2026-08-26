@@ -5,7 +5,7 @@ go 1.27.0
 require (
 	github.com/atotto/clipboard v0.1.4
 	github.com/google/uuid v1.6.0
-	github.com/wailsapp/wails/v2 v2.14.0
+	github.com/wailsapp/wails/v2 v2.15.0
 	github.com/wyzzgzhdcxy/wcj-go-common v0.0.0-20260419095559-e41d5f86e3eb
 	golang.org/x/text v0.39.0
 	modernc.org/sqlite v1.34.5
