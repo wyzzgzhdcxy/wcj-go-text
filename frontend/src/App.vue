@@ -117,7 +117,7 @@
 
       <div class="sidebar-footer">
         <span class="dot"></span>
-        <span>版本:1.0{{ buildTime ? ' (' + buildTime + ')' : '' }}</span>
+        <span>版本:1.0 ({{ buildTime || '加载中...' }})</span>
       </div>
     </aside>
 
@@ -135,6 +135,7 @@ import {
   Folder, Tools, SetUp,
   VideoCamera, VideoPlay, Monitor, Download, Headset, Search,
 } from '@element-plus/icons-vue';
+import { GetBuildTime } from './wailsjs/go/main/App.js';
 
 export default {
   name: 'App',
@@ -145,11 +146,11 @@ export default {
   },
   async mounted() {
     try {
-      const { GetBuildTime } = await import('../wailsjs/go/main/App.js');
       const t = await GetBuildTime();
-      if (t) this.buildTime = t;
+      this.buildTime = (t && t.length) ? t : '未注入';
     } catch (e) {
       console.error('Failed to get build time:', e);
+      this.buildTime = '调用失败';
     }
   },
   data() {
