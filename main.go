@@ -12,8 +12,9 @@ import (
 var assets embed.FS
 
 // init 引用 BuildTime，防止链接器 dead-code 优化丢弃 -X 注入的值。
+// （通过 runtime.SetFinalizer 引用，使符号必须保留）
 func init() {
-	_ = BuildTime
+	runtimeSetFinalizerForBuildTime()
 }
 
 func main() {

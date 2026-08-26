@@ -43,6 +43,8 @@ type App struct {
 var BuildTime string
 
 // GetBuildTime 返回构建时间（注入自 -ldflags）。
+//
+//go:noinline
 func (a *App) GetBuildTime() string {
 	return BuildTime
 }
