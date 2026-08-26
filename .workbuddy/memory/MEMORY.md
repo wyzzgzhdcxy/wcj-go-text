@@ -11,3 +11,4 @@
 
 ## CI 历史坑
 - 2026-08-26：`dAppServer/wails-build-action@v2` 内部用了废弃的 upload-artifact@v2，导致三平台秒拒。已改为直接 `wails build`（不依赖该三方 action），upload-artifact/download-artifact 用 v4
+- 2026-08-26：CI 最终只构建 Windows，且仅在打 v* tag 时触发（避免后台同步工具的 "Sync:" 提交造成空转打包）。发布 Release 流程 = `git tag vX.Y.Z && git push origin vX.Y.Z`
