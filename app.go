@@ -38,6 +38,15 @@ type App struct {
 	templateDir  string
 }
 
+// BuildTime 由 wails build 通过 -ldflags 在编译期注入，例如：
+//   wails build -ldflags "-X main.BuildTime=2026-08-26 11:00:00"
+var BuildTime string
+
+// GetBuildTime 返回构建时间（注入自 -ldflags）。
+func (a *App) GetBuildTime() string {
+	return BuildTime
+}
+
 // ProjectConfig holds all build configuration
 type ProjectConfig struct {
 	AppName     string `json:"appName"`

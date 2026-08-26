@@ -117,7 +117,7 @@
 
       <div class="sidebar-footer">
         <span class="dot"></span>
-        <span>版本:1.0</span>
+        <span>版本:1.0{{ buildTime ? ' (' + buildTime + ')' : '' }}</span>
       </div>
     </aside>
 
@@ -143,9 +143,19 @@ export default {
     Folder, Tools, SetUp,
     VideoCamera, VideoPlay, Monitor, Download, Headset, Search,
   },
+  async mounted() {
+    try {
+      const { GetBuildTime } = await import('../wailsjs/go/main/App.js');
+      const t = await GetBuildTime();
+      if (t) this.buildTime = t;
+    } catch (e) {
+      console.error('Failed to get build time:', e);
+    }
+  },
   data() {
     return {
       activeTab: 'text',
+      buildTime: '',
       textNav: {
         encode: [
           { path: '/textCommonEncode', label: '常用编码', icon: 'Link' },
