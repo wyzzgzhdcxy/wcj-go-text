@@ -1,0 +1,66 @@
+name: build
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ windows-latest, macos-latest, ubuntu-latest ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate build time
+        id: buildtime
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            echo "value=$(powershell -NoProfile -Command "Get-Date -Format 'yyyy-MM-ddTHH:mm:ss'")" >> $GITHUB_OUTPUT
+          else
+            echo "value=$(date -u +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        uses: dAppServer/wails-build-action@v2
+        with:
+          build-args: -trimpath -ldflags "-X main.BuildTime=${{ steps.buildtime.outputs.value }} -s -w"
+          package: true
+          platforms: windows/amd64
+
+      - name: Build (macOS)
+        if: runner.os == 'macOS'
+        uses: dAppServer/wails-build-action@v2
+        with:
+          build-args: -trimpath -ldflags "-X main.BuildTime=${{ steps.buildtime.outputs.value }} -s -w"
+          package: true
+          platforms: darwin/universal
+
+      - name: Build (Linux)
+        if: runner.os == 'Linux'
+        uses: dAppServer/wails-build-action@v2
+        with:
+          build-args: -trimpath -ldflags "-X main.BuildTime=${{ steps.buildtime.outputs.value }} -s -w"
+          package: true
+          platforms: linux/amd64
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wcj-go-text-${{ runner.os }}
+          path: |
+            build/bin/*
+            !build/bin/*.exe~
+          if-no-files-found: error
+          retention-days: 30
