@@ -1,10 +1,9 @@
 @echo off
-REM 一键构建脚本：自动把当前时间注入到 main.BuildTime，再调用 wails build
-REM 用法：双击 build.bat 或在命令行执行 .\build.bat
+REM Build script: inject current timestamp into main.BuildTime, then run wails build.
+REM Usage: double-click build.bat or run .\build.bat from cmd.
 
 setlocal
-for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value ^| findstr /r "="') do set DATETIME=%%I
-set BUILD_TIME=%DATETIME:~0,4%-%DATETIME:~4,2%-%DATETIME:~6,2%T%DATETIME:~8,2%:%DATETIME:~10,2%:%DATETIME:~12,2%
+for /f "delims=" %%I in ('powershell -NoProfile -Command "Get-Date -Format 'yyyy-MM-ddTHH:mm:ss'"') do set BUILD_TIME=%%I
 
 echo [build] BuildTime = %BUILD_TIME%
 wails build -ldflags "-X main.BuildTime=%BUILD_TIME%"
