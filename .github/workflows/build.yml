@@ -1,0 +1,106 @@
+name: build
+
+on:
+  push:
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (Windows)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.27'
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Generate build time
+        id: buildtime
+        shell: bash
+        run: |
+          echo "value=$(powershell -NoProfile -Command "Get-Date -Format 'yyyy-MM-ddTHH:mm:ss'")" >> $GITHUB_OUTPUT
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            echo "value=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+          else
+            echo "value=dev-${{ github.sha }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install Wails CLI
+        shell: bash
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.14.0
+
+      - name: Build (Windows)
+        shell: bash
+        run: wails build -trimpath -ldflags "-X main.BuildTime=${{ steps.buildtime.outputs.value }} -s -w" -platform windows/amd64 -nsis
+
+      - name: List build output
+        if: always()
+        shell: bash
+        run: ls -la build/bin/
+
+      - name: Upload raw binary
+        uses: actions/upload-artifact@v6
+        with:
+          name: wcj-go-text-windows-raw
+          path: |
+            build/bin/*
+            !build/bin/*.exe~
+            !build/bin/*.msi
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Upload installer / package
+        uses: actions/upload-artifact@v6
+        with:
+          name: wcj-go-text-windows-${{ steps.version.outputs.value }}
+          path: |
+            build/bin/*.exe
+            build/bin/*.msi
+            !build/bin/*.exe~
+          if-no-files-found: ignore
+          retention-days: 90
+
+  release:
+    name: Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v6
+        with:
+          path: dist
+
+      - name: Show downloaded files
+        run: ls -laR dist
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: |
+            dist/**/*.exe
+            dist/**/*.msi
+          generate_release_notes: true
+          fail_on_unmatched_files: false
