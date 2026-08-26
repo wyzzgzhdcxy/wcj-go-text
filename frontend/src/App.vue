@@ -1,22 +1,19 @@
 <template>
   <div class="app-shell">
-    <aside class="app-sidebar">
-      <div class="sidebar-brand">
-        <div class="brand-logo">文</div>
-        <div>
-          <div class="brand-title">文本工具箱</div>
-          <div class="brand-subtitle">Text Toolkit</div>
-        </div>
+    <aside class="app-sidebar" :class="{ collapsed }">
+      <div class="sidebar-header">
+        <div class="sidebar-title">文本工具箱</div>
+        <button class="sidebar-collapse" @click="collapsed = !collapsed" :title="collapsed ? '展开菜单' : '收起菜单'">
+          <el-icon><Fold v-if="!collapsed" /><Expand v-else /></el-icon>
+        </button>
       </div>
 
       <div class="sidebar-tabs">
         <div class="tabs-bar">
           <button class="tab-btn" :class="{ active: activeTab === 'text' }" @click="activeTab = 'text'">
-            <el-icon><Document /></el-icon>
             <span>文本</span>
           </button>
           <button class="tab-btn" :class="{ active: activeTab === 'tools' }" @click="activeTab = 'tools'">
-            <el-icon><Tools /></el-icon>
             <span>工具</span>
           </button>
         </div>
@@ -209,7 +206,7 @@ import {
   Edit, Calendar, Key, Tickets, Files, Coin, Promotion, Timer, Histogram,
   Connection, ChatLineRound, DocumentCopy, Switch, Crop, List, Memo,
   DataAnalysis, ScaleToOriginal, PriceTag, Iphone, Avatar, Postcard,
-  Menu,
+  Menu, Fold, Expand,
 } from '@element-plus/icons-vue';
 import { GetBuildTime } from './wailsjs/go/main/App.js';
 
@@ -223,7 +220,7 @@ export default {
     Edit, Calendar, Key, Tickets, Files, Coin, Promotion, Timer, Histogram,
     Connection, ChatLineRound, DocumentCopy, Switch, Crop, List, Memo,
     DataAnalysis, ScaleToOriginal, PriceTag, Iphone, Avatar, Postcard,
-    Menu,
+    Menu, Fold, Expand,
   },
   created() {
     // 在子组件挂载前就生成菜单数据，保证“菜单显示设置”页无论以何种方式进入都有数据
@@ -241,6 +238,7 @@ export default {
   data() {
     return {
       activeTab: 'text',
+      collapsed: false,
       buildTime: '',
       hiddenMenus: this.loadHiddenMenus(),
       textNav: {
@@ -437,5 +435,122 @@ export default {
 }
 .footer-menu :deep(.el-dropdown-menu__item) {
   font-size: 13px;
+}
+
+/* ---------- Sidebar header ---------- */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  flex-shrink: 0;
+  gap: 8px;
+}
+.sidebar-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar-collapse {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.15s, color 0.15s;
+}
+.sidebar-collapse:hover {
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+}
+
+/* ---------- Tabs (千问胶囊风格) ---------- */
+.sidebar-tabs {
+  padding: 4px 12px 8px;
+  background: transparent;
+  border-bottom: none;
+  flex-shrink: 0;
+}
+.tabs-bar {
+  display: flex;
+  gap: 0;
+  background: var(--bg-soft);
+  border-radius: var(--radius-md);
+  padding: 3px;
+}
+.tab-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.18s, color 0.18s, box-shadow 0.18s;
+  user-select: none;
+}
+.tab-btn:hover:not(.active) {
+  color: var(--text-secondary);
+}
+.tab-btn.active {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-weight: 600;
+  box-shadow: var(--shadow-card);
+}
+.tab-btn.active::after {
+  display: none;
+}
+
+/* ---------- Collapsed ---------- */
+.app-sidebar {
+  transition: width 0.2s ease, min-width 0.2s ease;
+}
+.app-sidebar.collapsed {
+  width: 60px;
+  min-width: 60px;
+}
+.app-sidebar.collapsed .sidebar-header {
+  justify-content: center;
+  padding: 14px 0 10px;
+}
+.app-sidebar.collapsed .sidebar-title,
+.app-sidebar.collapsed .tab-btn span,
+.app-sidebar.collapsed .nav-item span,
+.app-sidebar.collapsed .nav-group-label,
+.app-sidebar.collapsed .sidebar-footer > span {
+  display: none;
+}
+.app-sidebar.collapsed .tabs-bar {
+  flex-direction: column;
+  gap: 3px;
+}
+.app-sidebar.collapsed .tab-btn {
+  height: 36px;
+}
+.app-sidebar.collapsed .nav-item {
+  justify-content: center;
+  padding: 9px 0;
+}
+.app-sidebar.collapsed .sidebar-footer {
+  justify-content: center;
 }
 </style>
