@@ -13,12 +13,8 @@ permissions:
 
 jobs:
   build:
-    name: Build (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ windows-latest, macos-latest, ubuntu-latest ]
+    name: Build (Windows)
+    runs-on: windows-latest
 
     steps:
       - name: Checkout
@@ -42,11 +38,7 @@ jobs:
         id: buildtime
         shell: bash
         run: |
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            echo "value=$(powershell -NoProfile -Command "Get-Date -Format 'yyyy-MM-ddTHH:mm:ss'")" >> $GITHUB_OUTPUT
-          else
-            echo "value=$(date -u +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_OUTPUT
-          fi
+          echo "value=$(powershell -NoProfile -Command "Get-Date -Format 'yyyy-MM-ddTHH:mm:ss'")" >> $GITHUB_OUTPUT
 
       - name: Resolve version
         id: version
@@ -62,27 +54,9 @@ jobs:
         shell: bash
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.14.0
 
-      - name: Install Linux packaging tools
-        if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev pkg-config fakeroot
-
       - name: Build (Windows)
-        if: runner.os == 'Windows'
         shell: bash
         run: wails build -trimpath -ldflags "-X main.BuildTime=${{ steps.buildtime.outputs.value }} -s -w" -platform windows/amd64 -nsis
-
-      - name: Build (macOS)
-        if: runner.os == 'macOS'
-        shell: bash
-        run: wails build -trimpath -ldflags "-X main.BuildTime=${{ steps.buildtime.outputs.value }} -s -w" -platform darwin/universal
-
-      - name: Build (Linux)
-        if: runner.os == 'Linux'
-        shell: bash
-        run: wails build -trimpath -ldflags "-X main.BuildTime=${{ steps.buildtime.outputs.value }} -s -w" -platform linux/amd64
 
       - name: List build output
         if: always()
@@ -92,7 +66,7 @@ jobs:
       - name: Upload raw binary
         uses: actions/upload-artifact@v4
         with:
-          name: wcj-go-text-${{ matrix.os }}-raw
+          name: wcj-go-text-windows-raw
           path: |
             build/bin/*
             !build/bin/*.exe~
