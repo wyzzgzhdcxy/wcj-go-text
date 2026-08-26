@@ -1,20 +1,37 @@
 <template>
-  <div class="page-container">
-    <div class="content-wrapper">
-      <div class="textarea-wrapper">
-        <textarea v-model="inputData" class="textarea" placeholder="输入文本..."></textarea>
+  <div class="page">
+    <div class="split">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">输入 <span class="badge">{{ inputStats.chars }} 字符<</span></div>
+          <div class="card-actions">
+            <button class="chip" @click="clearInput">清空</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <textarea v-model="inputData" class="text-panel" placeholder="在此输入或粘贴文本”"></textarea>
+        </div>
       </div>
-      <div class="button-group">
-        <el-input style="width: 200px" placeholder="替换字符" v-model="replaceChar">
-          <template #prepend>替换字符</template>
-        </el-input>
-        <el-button type="success" @click="trimRepeated">✂️ 去除重复字符</el-button>
+
+      <div class="toolbar">
+        <span class="toolbar-label">参数</span>
+        <label class="inline-input">替换字符
+          <input v-model="replaceChar" maxlength="3" />
+        </label>
+        <span class="toolbar-spacer"></span>
+        <button class="chip primary" @click="trimRepeated"><span class="icon">✕</span>去除重复</button>
       </div>
-      <div class="textarea-wrapper">
-        <textarea v-model="result" class="textarea" placeholder="结果..." disabled></textarea>
-      </div>
-      <div class="copy-btn">
-        <el-button type="primary" @click="copyText">复制结果</el-button>
+
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">结果 <span class="badge">{{ resultStats.chars }} 字符<</span></div>
+          <div class="card-actions">
+            <button class="chip primary" :disabled="!result" @click="copyText">复制结果</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <textarea v-model="result" class="text-panel" placeholder="处理结果会显示在这里”" disabled></textarea>
+        </div>
       </div>
     </div>
   </div>
@@ -22,25 +39,31 @@
 
 <script>
 import trimRepeated from 'trim-repeated';
-import {CopyToClipboard} from "../wailsjs/go/main/App.js";
-import {ElNotification} from "element-plus";
+import { CopyToClipboard } from "../wailsjs/go/main/App.js";
+import { ElNotification } from "element-plus";
 
 export default {
   data() {
     return {
       inputData: '11111111\n22222222\n33333333333',
       result: '',
-      replaceChar: "#"
+      replaceChar: '#'
     }
   },
+  computed: {
+    inputStats() { return { chars: (this.inputData || '').length } },
+    resultStats() { return { chars: (this.result || '').length } }
+  },
   methods: {
+    clearInput() { this.inputData = ''; this.result = ''; },
     async copyText() {
+      if (!this.result) return;
       await CopyToClipboard(this.result);
-      ElNotification({title: '成功', message: "已复制到剪贴板", position: 'bottom-right', type: 'success'});
+      ElNotification({ title: '已复制', message: '结果已复制到剪贴板', position: 'bottom-right', type: 'success' });
     },
     trimRepeated() {
-      if (this.inputData === "") {
-        ElNotification({title: '数据为空', message: "输入数据为空", position: 'bottom-right', type: 'error'});
+      if (!this.inputData) {
+        ElNotification({ title: '数据为空', message: '请先输入文本', position: 'bottom-right', type: 'error' });
         return;
       }
       this.result = trimRepeated(this.inputData, this.replaceChar);
@@ -48,55 +71,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.page-container {
-  height: 100%;
-  padding: 0px;
-  display: flex;
-  flex-direction: column;
-}
-
-.content-wrapper {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  position: relative;
-}
-
-.textarea-wrapper {
-  flex: 1;
-  min-height: 0;
-}
-
-.textarea {
-  width: 100%;
-  height: 100%;
-  padding: 12px;
-  border-radius: 4px;
-  border: 1px solid #dcdfe6;
-  resize: none;
-  font-family: monospace;
-  font-size: 14px;
-  box-sizing: border-box;
-}
-
-.textarea:focus {
-  outline: none;
-  border-color: #409EFF;
-}
-
-.button-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding-left: 10px;
-}
-
-.copy-btn {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-}
-</style>

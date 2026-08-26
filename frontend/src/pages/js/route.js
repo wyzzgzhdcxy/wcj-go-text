@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHashHistory } from 'vue-router';
 import { SetTitle } from '../../wailsjs/go/main/App.js';
 
 const routes = [
@@ -12,10 +12,17 @@ const routes = [
     {path: '/textFormat', component: () => import('../textFormat.vue'), meta: { title: '格式转换' }},
     {path: '/textChar', component: () => import('../textChar.vue'), meta: { title: '字符转换' }},
     {path: '/textFile', component: () => import('../textFile.vue'), meta: { title: '文件处理' }},
+    {path: '/appGenerator', component: () => import('../appGenerator.vue'), meta: { title: '应用生成' }},
+
+    {path: '/ytdlp', component: () => import('../ytdlp.vue'), meta: { title: 'yt-dlp 下载' }},
+    {path: '/downloadList', component: () => import('../downloadList.vue'), meta: { title: 'B站视频' }},
+    {path: '/m3u8TaskDownload', component: () => import('../m3u8TaskDownload.vue'), meta: { title: 'M3U8 下载' }},
+    {path: '/musicSearch', component: () => import('../musicSearch.vue'), meta: { title: '音乐搜索' }},
+    {path: '/musicSource', component: () => import('../musicSource.vue'), meta: { title: '音乐解析' }},
 ];
 
 const router = createRouter({
-    history: createWebHistory(),
+    history: createWebHashHistory(),
     routes,
 });
 

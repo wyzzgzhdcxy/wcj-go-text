@@ -1,182 +1,205 @@
 <template>
-  <div id="app-layout">
-    <div class="main-wrapper">
-      <!-- 左侧工具导航 -->
-      <div class="sidebar">
-        <div class="nav-items">
-          <router-link to="/textCommonEncode" class="nav-item" :class="{ active: $route.path === '/textCommonEncode' }">
-            <span class="nav-icon">🔗</span>
-            <span class="nav-tooltip">常用编码</span>
-          </router-link>
-          <router-link to="/textHashEncode" class="nav-item" :class="{ active: $route.path === '/textHashEncode' }">
-            <span class="nav-icon">#️⃣</span>
-            <span class="nav-tooltip">哈希编码</span>
-          </router-link>
-          <router-link to="/textNormal" class="nav-item" :class="{ active: $route.path === '/textNormal' }">
-            <span class="nav-icon">📝</span>
-            <span class="nav-tooltip">普通文本</span>
-          </router-link>
-          <router-link to="/textBothEnds" class="nav-item" :class="{ active: $route.path === '/textBothEnds' }">
-            <span class="nav-icon">〰️</span>
-            <span class="nav-tooltip">文本两端</span>
-          </router-link>
-          <router-link to="/textSort" class="nav-item" :class="{ active: $route.path === '/textSort' }">
-            <span class="nav-icon">⬆️</span>
-            <span class="nav-tooltip">文本排序</span>
-          </router-link>
-          <router-link to="/textRemove" class="nav-item" :class="{ active: $route.path === '/textRemove' }">
-            <span class="nav-icon">✂️</span>
-            <span class="nav-tooltip">去除文本</span>
-          </router-link>
-          <router-link to="/textFormat" class="nav-item" :class="{ active: $route.path === '/textFormat' }">
-            <span class="nav-icon">🔧</span>
-            <span class="nav-tooltip">格式转换</span>
-          </router-link>
-          <router-link to="/textChar" class="nav-item" :class="{ active: $route.path === '/textChar' }">
-            <span class="nav-icon">🔀</span>
-            <span class="nav-tooltip">字符转换</span>
-          </router-link>
-          <router-link to="/textFile" class="nav-item" :class="{ active: $route.path === '/textFile' }">
-            <span class="nav-icon">📁</span>
-            <span class="nav-tooltip">文件处理</span>
-          </router-link>
+  <div class="app-shell">
+    <aside class="app-sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-logo">文</div>
+        <div>
+          <div class="brand-title">文本工具箱</div>
+          <div class="brand-subtitle">Text Toolkit</div>
         </div>
       </div>
 
-      <!-- 主内容区 -->
-      <div class="main-content">
+      <div class="sidebar-tabs">
+        <div class="tabs-bar">
+          <button class="tab-btn" :class="{ active: activeTab === 'text' }" @click="activeTab = 'text'">
+            <el-icon><Document /></el-icon>
+            <span>文本</span>
+          </button>
+          <button class="tab-btn" :class="{ active: activeTab === 'tools' }" @click="activeTab = 'tools'">
+            <el-icon><Tools /></el-icon>
+            <span>工具</span>
+          </button>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <template v-if="activeTab === 'text'">
+          <div class="nav-group-label">编码</div>
+          <router-link
+            v-for="item in textNav.encode"
+            :key="item.path"
+            :to="item.path"
+            class="nav-item"
+            :class="{ active: $route.path === item.path }"
+          >
+            <el-icon class="nav-icon"><component :is="item.icon" /></el-icon>
+            <span>{{ item.label }}</span>
+          </router-link>
+
+          <div class="nav-group-label">处理</div>
+          <router-link
+            v-for="item in textNav.process"
+            :key="item.path"
+            :to="item.path"
+            class="nav-item"
+            :class="{ active: $route.path === item.path }"
+          >
+            <el-icon class="nav-icon"><component :is="item.icon" /></el-icon>
+            <span>{{ item.label }}</span>
+          </router-link>
+
+          <div class="nav-group-label">格式</div>
+          <router-link
+            v-for="item in textNav.format"
+            :key="item.path"
+            :to="item.path"
+            class="nav-item"
+            :class="{ active: $route.path === item.path }"
+          >
+            <el-icon class="nav-icon"><component :is="item.icon" /></el-icon>
+            <span>{{ item.label }}</span>
+          </router-link>
+
+          <div class="nav-group-label">文件</div>
+          <router-link
+            v-for="item in textNav.file"
+            :key="item.path"
+            :to="item.path"
+            class="nav-item"
+            :class="{ active: $route.path === item.path }"
+          >
+            <el-icon class="nav-icon"><component :is="item.icon" /></el-icon>
+            <span>{{ item.label }}</span>
+          </router-link>
+        </template>
+
+        <template v-else>
+          <div class="nav-group-label">视频下载</div>
+          <router-link
+            v-for="item in toolsNav.video"
+            :key="item.path"
+            :to="item.path"
+            class="nav-item"
+            :class="{ active: $route.path === item.path }"
+          >
+            <el-icon class="nav-icon">
+              <component :is="item.icon" v-if="item.icon" />
+              <span v-else class="nav-emoji">{{ item.emoji }}</span>
+            </el-icon>
+            <span>{{ item.label }}</span>
+          </router-link>
+
+          <div class="nav-group-label">音乐</div>
+          <router-link
+            v-for="item in toolsNav.music"
+            :key="item.path"
+            :to="item.path"
+            class="nav-item"
+            :class="{ active: $route.path === item.path }"
+          >
+            <el-icon class="nav-icon"><component :is="item.icon" /></el-icon>
+            <span>{{ item.label }}</span>
+          </router-link>
+
+          <div class="nav-group-label">生成</div>
+          <router-link
+            v-for="item in toolsNav.generate"
+            :key="item.path"
+            :to="item.path"
+            class="nav-item"
+            :class="{ active: $route.path === item.path }"
+          >
+            <el-icon class="nav-icon"><component :is="item.icon" /></el-icon>
+            <span>{{ item.label }}</span>
+          </router-link>
+        </template>
+      </nav>
+
+      <div class="sidebar-footer">
+        <span class="dot"></span>
+        <span>Wails · Go + Vue</span>
+      </div>
+    </aside>
+
+    <main class="app-main">
+      <div class="app-body">
         <router-view></router-view>
       </div>
-    </div>
+    </main>
   </div>
 </template>
 
 <script>
+import {
+  Link, Lock, Document, Sort, Operation, Scissor, MagicStick, DataLine,
+  Folder, Tools, SetUp,
+  VideoCamera, VideoPlay, Monitor, Download, Headset, Search,
+} from '@element-plus/icons-vue';
+
 export default {
-  name: 'App'
-}
+  name: 'App',
+  components: {
+    Link, Lock, Document, Sort, Operation, Scissor, MagicStick, DataLine,
+    Folder, Tools, SetUp,
+    VideoCamera, VideoPlay, Monitor, Download, Headset, Search,
+  },
+  data() {
+    return {
+      activeTab: 'text',
+      textNav: {
+        encode: [
+          { path: '/textCommonEncode', label: '常用编码', icon: 'Link' },
+          { path: '/textHashEncode',   label: '哈希编码', icon: 'Lock' },
+          { path: '/textNormal',       label: '普通文本', icon: 'Document' },
+        ],
+        process: [
+          { path: '/textBothEnds', label: '文本两端', icon: 'Sort' },
+          { path: '/textSort',     label: '文本排序', icon: 'Operation' },
+          { path: '/textRemove',   label: '去除文本', icon: 'Scissor' },
+        ],
+        format: [
+          { path: '/textFormat', label: '格式转换', icon: 'MagicStick' },
+          { path: '/textChar',   label: '字符转换', icon: 'DataLine' },
+        ],
+        file: [
+          { path: '/textFile', label: '文件处理', icon: 'Folder' },
+        ],
+      },
+      toolsNav: {
+        video: [
+          { path: '/ytdlp',            label: 'yt-dlp 下载', icon: 'Monitor' },
+          { path: '/downloadList',     label: 'B站视频', icon: 'Download' },
+          { path: '/m3u8TaskDownload', label: 'M3U8 下载', icon: 'VideoPlay' },
+        ],
+        music: [
+          { path: '/musicSearch', label: '音乐搜索', icon: 'Search' },
+          { path: '/musicSource', label: '音乐解析', icon: 'Headset' },
+        ],
+        generate: [
+          { path: '/appGenerator', label: '应用生成', icon: 'SetUp' },
+        ],
+      },
+    };
+  },
+  watch: {
+    '$route.path': {
+      immediate: true,
+      handler(path) {
+        const toolPaths = [
+          '/appGenerator',
+          '/ytdlp', '/downloadList', '/m3u8TaskDownload',
+          '/musicSearch', '/musicSource',
+        ];
+        if (toolPaths.includes(path)) this.activeTab = 'tools';
+      },
+    },
+  },
+};
 </script>
 
-<style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-html, body, #app {
-  height: 100%;
-  overflow: hidden;
-}
-
-#app-layout {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  width: 100vw;
-}
-
-.main-wrapper {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-}
-
-/* 左侧导航栏 */
-.sidebar {
-  width: 48px;
-  min-width: 48px;
-  background: #ffffff;
-  border-right: 1px solid #e8eaed;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
-  z-index: 100;
-}
-
-.nav-items {
-  flex: 1;
-  padding: 8px 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  overflow-y: auto;
-  scrollbar-width: none;
-}
-
-.nav-items::-webkit-scrollbar {
-  display: none;
-}
-
-.nav-item {
-  width: 100%;
-  padding: 10px 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  position: relative;
-  color: #606266;
-  text-decoration: none;
-  transition: background-color 0.2s;
-}
-
-.nav-item:hover {
-  background-color: #f5f7fa;
-  color: #409eff;
-}
-
-.nav-item.active {
-  color: #409eff;
-  background-color: #ecf5ff;
-}
-
-.nav-item.active::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 20px;
-  background-color: #409eff;
-  border-radius: 0 2px 2px 0;
-}
-
-.nav-icon {
+<style scoped>
+.nav-emoji {
   font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.nav-tooltip {
-  position: absolute;
-  left: calc(100% + 8px);
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 6px 10px;
-  border-radius: 4px;
-  font-size: 11px;
-  white-space: nowrap;
-  z-index: 1000;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s;
-}
-
-.nav-item:hover .nav-tooltip {
-  opacity: 1;
-}
-
-/* 主内容区 */
-.main-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: #f5f7fa;
+  line-height: 1;
 }
 </style>

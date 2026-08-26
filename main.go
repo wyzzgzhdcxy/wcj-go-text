@@ -12,16 +12,18 @@ import (
 var assets embed.FS
 
 func main() {
-	// Create an instance of the app structure
 	app := NewApp()
 
-	// Create application with options
 	err := wails.Run(&options.App{
-		Title:  "wcj-go-text",
-		Width:  1024,
-		Height: 768,
+		Title:  "文本工具箱",
+		Width:  1180,
+		Height: 860,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
+		},
+		SingleInstanceLock: &options.SingleInstanceLock{
+			UniqueId:               "wcj-go-text-e3f2a1b4-8c9d-4e5f-a6b7",
+			OnSecondInstanceLaunch: app.onSecondInstanceLaunch,
 		},
 		OnStartup: app.startup,
 		Bind: []interface{}{

@@ -9,12 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.2.37",
-    "vue-router": "^4.0.0",
-    "element-plus": "^2.4.0",
     "@element-plus/icons-vue": "^2.3.1",
+    "element-plus": "^2.4.0",
     "trim-repeated": "^2.0.0",
-    "axios": "^1.6.0"
+    "vue": "^3.2.37",
+    "vue-router": "^4.0.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^3.0.3",
