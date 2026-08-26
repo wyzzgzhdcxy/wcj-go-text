@@ -11,6 +11,11 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
+// init 引用 BuildTime，防止链接器 dead-code 优化丢弃 -X 注入的值。
+func init() {
+	_ = BuildTime
+}
+
 func main() {
 	app := NewApp()
 
