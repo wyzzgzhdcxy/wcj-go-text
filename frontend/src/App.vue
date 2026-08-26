@@ -117,7 +117,7 @@
 
       <div class="sidebar-footer">
         <span class="dot"></span>
-        <span>Wails · Go + Vue</span>
+        <span>版本:1.0</span>
       </div>
     </aside>
 
