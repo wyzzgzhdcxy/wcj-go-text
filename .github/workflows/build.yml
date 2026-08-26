@@ -70,28 +70,17 @@ jobs:
           path: |
             build/bin/*
             !build/bin/*.exe~
-            !build/bin/*.dmg
-            !build/bin/*.deb
-            !build/bin/*.AppImage
-            !build/bin/*.zip
-            !build/bin/*.tar.gz
-            !build/bin/*.pkg
+            !build/bin/*.msi
           if-no-files-found: ignore
           retention-days: 30
 
       - name: Upload installer / package
         uses: actions/upload-artifact@v4
         with:
-          name: wcj-go-text-${{ matrix.os }}-${{ steps.version.outputs.value }}
+          name: wcj-go-text-windows-${{ steps.version.outputs.value }}
           path: |
             build/bin/*.exe
             build/bin/*.msi
-            build/bin/*.dmg
-            build/bin/*.deb
-            build/bin/*.AppImage
-            build/bin/*.zip
-            build/bin/*.tar.gz
-            build/bin/*.pkg
             !build/bin/*.exe~
           if-no-files-found: ignore
           retention-days: 90
@@ -116,11 +105,5 @@ jobs:
           files: |
             dist/**/*.exe
             dist/**/*.msi
-            dist/**/*.dmg
-            dist/**/*.deb
-            dist/**/*.AppImage
-            dist/**/*.zip
-            dist/**/*.tar.gz
-            dist/**/*.pkg
           generate_release_notes: true
           fail_on_unmatched_files: false
