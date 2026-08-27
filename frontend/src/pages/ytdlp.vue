@@ -394,7 +394,7 @@
 
     <!-- Loading State -->
     <div v-else class="content-area" style="align-items: center; justify-content: center;">
-      <el-loading-spinner />
+      <el-icon class="is-loading" :size="48"><Loading /></el-icon>
     </div>
   </div>
 </template>
@@ -408,9 +408,11 @@ import {
   CheckYtDlpDeps,
   SelectDirectory,
 } from "../wailsjs/go/app/App.js";
+import { Loading } from '@element-plus/icons-vue';
 
 export default {
   name: "Ytdlp",
+  components: { Loading },
   data() {
     return {
       url: "",

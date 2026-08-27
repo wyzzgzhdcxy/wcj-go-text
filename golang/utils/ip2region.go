@@ -18,7 +18,7 @@ func IpParse(ip string) string {
 	defer searcher.Close()
 
 	// do the search
-	region, err := searcher.SearchByStr(ip)
+	region, err := searcher.Search(ip)
 	if err != nil {
 		fmt.Printf("failed to SearchIP(%s): %s\n", ip, err)
 		return ""
