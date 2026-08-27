@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -18,6 +17,7 @@ import (
 	"github.com/wyzzgzhdcxy/wcj-go-common/utils"
 
 	"wcj-go-text/golang"
+	"wcj-go-text/golang/cmdWrapper"
 )
 
 // ---------------- 注册电影相关事件 ----------------
@@ -42,7 +42,7 @@ func (a *App) OpenExplorer(path string) {
 		path, _ = os.Getwd()
 	}
 	path = filepath.FromSlash(path)
-	exec.Command("explorer", path).Start()
+	cmdWrapper.Command("explorer", path).Start()
 }
 
 func (a *App) GetTempDir() string {
@@ -304,7 +304,7 @@ func (a *App) SendToFrontend(message string) {
 // ---------------- 浏览器 ----------------
 
 func (a *App) OpenUrl(openURL string) error {
-	cmd := exec.Command("cmd", "/c", "start", openURL)
+	cmd := cmdWrapper.Command("cmd", "/c", "start", openURL)
 	return cmd.Run()
 }
 

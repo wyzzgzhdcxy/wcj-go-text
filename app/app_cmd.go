@@ -6,7 +6,6 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"wcj-go-text/golang"
@@ -22,7 +21,7 @@ type EnvCheckResult struct {
 }
 
 func (a *App) ExecCommand(command string, dir string) string {
-	cmd := exec.Command("cmd", "/c", command)
+	cmd := cmdWrapper.Command("cmd", "/c", command)
 	if dir != "" {
 		cmd.Dir = dir
 	}
@@ -57,7 +56,7 @@ func (a *App) CheckEnvironment() []EnvCheckResult {
 	}
 	for _, c := range checkers {
 		result := EnvCheckResult{Name: c.name}
-		cmd := exec.Command(c.cmd, c.args...)
+		cmd := cmdWrapper.Command(c.cmd, c.args...)
 		output, err := cmd.CombinedOutput()
 		if err == nil {
 			result.Found = true
@@ -70,7 +69,7 @@ func (a *App) CheckEnvironment() []EnvCheckResult {
 }
 
 func (a *App) ShutdownAfterSeconds(seconds int) string {
-	cmd := exec.Command("shutdown", "/s", "/t", strconv.Itoa(seconds))
+	cmd := cmdWrapper.Command("shutdown", "/s", "/t", strconv.Itoa(seconds))
 	err := cmd.Run()
 	if err != nil {
 		return "关机设置失败: " + err.Error()
@@ -79,7 +78,7 @@ func (a *App) ShutdownAfterSeconds(seconds int) string {
 }
 
 func (a *App) ShutdownAt(timeStr string) string {
-	cmd := exec.Command("shutdown", "/s", "/t", timeStr)
+	cmd := cmdWrapper.Command("shutdown", "/s", "/t", timeStr)
 	err := cmd.Run()
 	if err != nil {
 		return "关机设置失败: " + err.Error()
@@ -88,7 +87,7 @@ func (a *App) ShutdownAt(timeStr string) string {
 }
 
 func (a *App) CancelShutdown() string {
-	cmd := exec.Command("shutdown", "/a")
+	cmd := cmdWrapper.Command("shutdown", "/a")
 	err := cmd.Run()
 	if err != nil {
 		return "取消关机失败: " + err.Error()
@@ -257,8 +256,7 @@ func (a *App) ExecuteCmdCommand(id int, command string) (string, error) {
 	if cmdStr == "" {
 		return "", fmt.Errorf("命令为空")
 	}
-	cmd := exec.Command("cmd", "/C", cmdStr)
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	cmd := cmdWrapper.Command("cmd", "/C", cmdStr)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return string(output), fmt.Errorf("执行命令失败: %v", err)
@@ -268,8 +266,7 @@ func (a *App) ExecuteCmdCommand(id int, command string) (string, error) {
 
 // ExecuteRawCommand 执行原始命令
 func (a *App) ExecuteRawCommand(command string) (string, error) {
-	cmd := exec.Command("cmd", "/C", command)
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	cmd := cmdWrapper.Command("cmd", "/C", command)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return string(output), fmt.Errorf("执行命令失败: %v", err)
@@ -279,8 +276,7 @@ func (a *App) ExecuteRawCommand(command string) (string, error) {
 
 // OpenEnvironmentEditor 打开系统环境变量编辑器
 func (a *App) OpenEnvironmentEditor() {
-	cmd := exec.Command("rundll32", "sysdm.cpl,EditEnvironmentVariables")
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	cmd := cmdWrapper.Command("rundll32", "sysdm.cpl,EditEnvironmentVariables")
 	cmd.Run()
 }
 
@@ -292,7 +288,7 @@ type EnvVar struct {
 
 // GetUserEnvVars 获取用户环境变量
 func (a *App) GetUserEnvVars() []EnvVar {
-	cmd := exec.Command("cmd", "/C", "set")
+	cmd := cmdWrapper.Command("cmd", "/C", "set")
 	output, _ := cmd.Output()
 	var result []EnvVar
 	for _, line := range strings.Split(string(output), "\n") {
@@ -317,8 +313,7 @@ func (a *App) GetProcessEnvVars() []EnvVar {
 
 // GetSystemEnvVars 获取系统环境变量
 func (a *App) GetSystemEnvVars() []EnvVar {
-	cmd := exec.Command("cmd", "/C", "set")
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	cmd := cmdWrapper.Command("cmd", "/C", "set")
 	output, _ := cmd.Output()
 	var result []EnvVar
 	seen := make(map[string]bool)
@@ -339,8 +334,7 @@ func (a *App) GetSystemEnvVars() []EnvVar {
 
 // DeleteUserEnvVar 删除用户环境变量
 func (a *App) DeleteUserEnvVar(name string) error {
-	cmd := exec.Command("reg", "delete", `HKCU\Environment`, "/v", name, "/f")
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	cmd := cmdWrapper.Command("reg", "delete", `HKCU\Environment`, "/v", name, "/f")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("删除失败: %s", string(output))
@@ -350,8 +344,7 @@ func (a *App) DeleteUserEnvVar(name string) error {
 
 // DeleteSystemEnvVar 删除系统环境变量
 func (a *App) DeleteSystemEnvVar(name string) error {
-	cmd := exec.Command("reg", "delete", `HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment`, "/v", name, "/f")
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	cmd := cmdWrapper.Command("reg", "delete", `HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment`, "/v", name, "/f")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("删除失败: %s", string(output))
@@ -361,8 +354,7 @@ func (a *App) DeleteSystemEnvVar(name string) error {
 
 // GetPathInfo 获取 PATH 环境变量信息
 func (a *App) GetPathInfo() map[string]string {
-	cmd := exec.Command("cmd", "/C", "echo %PATH%")
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	cmd := cmdWrapper.Command("cmd", "/C", "echo %PATH%")
 	output, _ := cmd.Output()
 	path := strings.TrimSpace(string(output))
 	return map[string]string{"path": path}
