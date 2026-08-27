@@ -237,8 +237,8 @@ export default {
   },
   data() {
     return {
-      activeTab: 'text',
-      collapsed: false,
+      activeTab: this.loadActiveTab(),
+      collapsed: this.loadCollapsed(),
       buildTime: '',
       hiddenMenus: this.loadHiddenMenus(),
       textNav: {
@@ -348,6 +348,21 @@ export default {
         return [];
       }
     },
+    loadActiveTab() {
+      try {
+        const v = localStorage.getItem('wcj_active_tab');
+        return v === 'tools' ? 'tools' : 'text';
+      } catch (e) {
+        return 'text';
+      }
+    },
+    loadCollapsed() {
+      try {
+        return localStorage.getItem('wcj_sidebar_collapsed') === 'true';
+      } catch (e) {
+        return false;
+      }
+    },
     buildMenuGroups() {
       const textGroupDefs = [
         { key: 'encode',  label: '编码',   icon: 'Link' },
@@ -407,6 +422,12 @@ export default {
         ];
         if (toolPaths.includes(path)) this.activeTab = 'tools';
       },
+    },
+    activeTab(v) {
+      try { localStorage.setItem('wcj_active_tab', v); } catch (e) { /* ignore */ }
+    },
+    collapsed(v) {
+      try { localStorage.setItem('wcj_sidebar_collapsed', String(!!v)); } catch (e) { /* ignore */ }
     },
   },
 };
