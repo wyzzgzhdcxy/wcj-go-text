@@ -1,8 +1,8 @@
 @echo off
 setlocal enabledelayedexpansion
 
-REM Change to script directory (repo root)
-cd /d "%~dp0"
+REM Change to repo root (脚本所在目录的上级)
+cd /d "%~dp0\.."
 
 REM Ensure git is available
 where git >nul 2>nul
