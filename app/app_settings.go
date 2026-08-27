@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"sync"
 
 	"github.com/wyzzgzhdcxy/wcj-go-common/core"
 )
@@ -15,72 +16,83 @@ import (
 // Assets 持有嵌入式资源（来自 main.go），用于读取 system.config.json
 
 // settingsDb 图像/emoji 设置数据库（image_tools.db）
-var settingsDb *sql.DB
+var (
+	settingsDb     *sql.DB
+	settingsDbOnce sync.Once
+)
 
 const emojiTmpDir = `C:\Users\wangchaojun\AppData\Local\wtools\tmp\emoji`
 
-// initImageSettingsDb 初始化配置数据库（sqlite）
-func (a *App) initImageSettingsDb() error {
-	dbPath := filepath.Join(core.GetTempDir(), "data", "image_tools.db")
-	dbDir := filepath.Dir(dbPath)
-	if err := os.MkdirAll(dbDir, 0755); err != nil {
-		return fmt.Errorf("创建数据库目录失败: %v", err)
-	}
+// initImageSettingsDb 懒加载初始化配置数据库（sqlite），由 sync.Once 保证只执行一次。
+// 失败时仅记录日志，settingsDb 保持 nil，调用方已有 nil 兜底逻辑。
+func (a *App) initImageSettingsDb() {
+	settingsDbOnce.Do(func() {
+		dbPath := filepath.Join(core.GetTempDir(), "data", "image_tools.db")
+		dbDir := filepath.Dir(dbPath)
+		if err := os.MkdirAll(dbDir, 0755); err != nil {
+			log.Printf("创建数据库目录失败: %v", err)
+			return
+		}
 
-	db, err := sql.Open("sqlite", dbPath)
-	if err != nil {
-		return fmt.Errorf("打开数据库失败: %v", err)
-	}
+		db, err := sql.Open("sqlite", dbPath)
+		if err != nil {
+			log.Printf("打开数据库失败: %v", err)
+			return
+		}
 
-	_, err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS settings (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			key TEXT NOT NULL UNIQUE,
-			value TEXT,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-		)
-	`)
-	if err != nil {
-		db.Close()
-		return fmt.Errorf("创建表失败: %v", err)
-	}
+		_, err = db.Exec(`
+			CREATE TABLE IF NOT EXISTS settings (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				key TEXT NOT NULL UNIQUE,
+				value TEXT,
+				created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+				updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+			)
+		`)
+		if err != nil {
+			db.Close()
+			log.Printf("创建表失败: %v", err)
+			return
+		}
 
-	_, err = db.Exec(`CREATE INDEX IF NOT EXISTS idx_settings_key ON settings(key)`)
-	if err != nil {
-		db.Close()
-		return fmt.Errorf("创建索引失败: %v", err)
-	}
+		_, err = db.Exec(`CREATE INDEX IF NOT EXISTS idx_settings_key ON settings(key)`)
+		if err != nil {
+			db.Close()
+			log.Printf("创建索引失败: %v", err)
+			return
+		}
 
-	_, err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS image_prompts (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			prompt TEXT NOT NULL UNIQUE,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-		)
-	`)
-	if err != nil {
-		db.Close()
-		return fmt.Errorf("创建图片提示词表失败: %v", err)
-	}
+		_, err = db.Exec(`
+			CREATE TABLE IF NOT EXISTS image_prompts (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				prompt TEXT NOT NULL UNIQUE,
+				created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+			)
+		`)
+		if err != nil {
+			db.Close()
+			log.Printf("创建图片提示词表失败: %v", err)
+			return
+		}
 
-	_, err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS emoji_images (
-			id TEXT PRIMARY KEY,
-			png_data BLOB NOT NULL,
-			ico_data BLOB NOT NULL,
-			emoji TEXT NOT NULL,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-		)
-	`)
-	if err != nil {
-		db.Close()
-		return fmt.Errorf("创建 emoji 图片表失败: %v", err)
-	}
+		_, err = db.Exec(`
+			CREATE TABLE IF NOT EXISTS emoji_images (
+				id TEXT PRIMARY KEY,
+				png_data BLOB NOT NULL,
+				ico_data BLOB NOT NULL,
+				emoji TEXT NOT NULL,
+				created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+			)
+		`)
+		if err != nil {
+			db.Close()
+			log.Printf("创建 emoji 图片表失败: %v", err)
+			return
+		}
 
-	settingsDb = db
-	log.Printf("图片配置数据库初始化成功: %s", dbPath)
-	return nil
+		settingsDb = db
+		log.Printf("图片配置数据库初始化成功: %s", dbPath)
+	})
 }
 
 func saveSetting(key, value string) {

@@ -15,7 +15,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"log"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -27,7 +26,6 @@ import (
 	"time"
 	"unicode"
 
-	"wcj-go-text/golang"
 	"wcj-go-text/golang/cmdWrapper"
 
 	"github.com/atotto/clipboard"
@@ -101,16 +99,12 @@ func NewApp() *App {
 	return &App{}
 }
 
-// Startup Wails 启动回调，保存 ctx 并初始化数据库。
+// Startup Wails 启动回调，仅保存 ctx；DB 初始化已改为懒加载（sync.Once），
 // 模板解压已改为懒加载，在 BuildProject 首次调用时执行。
 // 导出供 main.go 在 options.App.OnStartup 中绑定。
 func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
 	a.registerMovieEvents()
-	if err := a.initImageSettingsDb(); err != nil {
-		log.Printf("初始化图片配置数据库失败: %v", err)
-	}
-	golang.GetToolsDB()
 }
 
 // OnSecondInstanceLaunch 第二次启动时把已有窗口拉到前台。
