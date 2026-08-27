@@ -1,15 +1,11 @@
 package myTTS
 
 import (
-	"bytes"
+	"context"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -20,6 +16,7 @@ import (
 	"github.com/wyzzgzhdcxy/wcj-go-common/core"
 
 	"wcj-go-text/golang/cmdWrapper"
+	"wcj-go-text/golang/rpc"
 )
 
 // MiniMax TTS API 相关结构
@@ -44,17 +41,6 @@ type MiniMaxTTSRes struct {
 	Cost       string `json:"cost"`       // 耗时
 }
 
-// MiniMax TTS API 响应结构
-type miniMaxAPIResp struct {
-	BaseResp struct {
-		StatusCode    int    `json:"status_code"`
-		StatusMessage string `json:"status_msg"`
-	} `json:"base_resp"`
-	Data struct {
-		Audio string `json:"audio"` // Base64 编码的音频
-	} `json:"data"`
-}
-
 // TextToSpeech 使用 MiniMax TTS API 将文本转换为语音
 func TextToSpeech(req MiniMaxTTsReq) MiniMaxTTSRes {
 	startTime := time.Now()
@@ -63,14 +49,6 @@ func TextToSpeech(req MiniMaxTTsReq) MiniMaxTTSRes {
 		return MiniMaxTTSRes{
 			Success: false,
 			Message: "请输入要转换的文本",
-		}
-	}
-
-	apiKey := os.Getenv("MINIMAX_API_KEY")
-	if apiKey == "" {
-		return MiniMaxTTSRes{
-			Success: false,
-			Message: "请配置 MiniMax API Key (环境变量 MINIMAX_API_KEY)",
 		}
 	}
 
@@ -88,125 +66,27 @@ func TextToSpeech(req MiniMaxTTsReq) MiniMaxTTSRes {
 	timestamp := time.Now().Format("20060102_150405")
 	outputPath := filepath.Join(ttsDir, fmt.Sprintf("tts_%s.mp3", timestamp))
 
-	// 调用的 API URL (MiniMax TTS Pro API)
-	apiURL := "https://api.minimaxi.com/v1/t2a_v2"
-	// 构建请求体
-	voiceID := req.VoiceID
-	if voiceID == "" {
-		voiceID = "male-qn-qingse" // 默认音色
-	}
-	// 模型和音色映射
-	model := "speech-2.8-hd" // 高质量模型
-	audioType := "mp3"
-
-	requestBody := map[string]interface{}{
-		"model":  model,
-		"text":   req.Text,
-		"stream": false,
-		"voice_setting": map[string]interface{}{
-			"voice_id":          voiceID,
-			"speed":             1.0,
-			"volume":            1.0,
-			"pitch":             0,
-			"emotion":           "happy",
-			"use_speaker_boost": false,
-		},
-		"audio_setting": map[string]interface{}{
-			"audio_type":  audioType,
-			"sample_rate": 32000,
-			"bitrate":     128000,
-		},
-	}
-
-	// 发送请求
-	bodyBytes, err := json.Marshal(requestBody)
+	// 调用 RPC 层获取音频数据
+	client := rpc.NewMiniMaxClient()
+	resp, err := client.TextToSpeech(context.Background(), rpc.TTSRequest{
+		Text:    req.Text,
+		VoiceID: req.VoiceID,
+	})
 	if err != nil {
 		return MiniMaxTTSRes{
 			Success: false,
-			Message: "请求体构建失败：" + err.Error(),
+			Message: err.Error(),
 		}
 	}
 
-	httpReq, err := http.NewRequest("POST", apiURL, bytes.NewReader(bodyBytes))
-	if err != nil {
-		return MiniMaxTTSRes{
-			Success: false,
-			Message: "创建请求失败：" + err.Error(),
-		}
-	}
-
-	log.Printf("key:%s", maskKey(apiKey))
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", "Bearer "+apiKey)
-
-	client := &http.Client{
-		Timeout: 60 * time.Second,
-	}
-
-	log.Printf("request url:%s\n", string(bodyBytes))
-
-	resp, err := client.Do(httpReq)
-	if err != nil {
-		return MiniMaxTTSRes{
-			Success: false,
-			Message: "请求失败：" + err.Error(),
-		}
-	}
-	defer resp.Body.Close()
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return MiniMaxTTSRes{
-			Success: false,
-			Message: "读取响应失败：" + err.Error(),
-		}
-	}
-	// 解析响应
-	var apiResp miniMaxAPIResp
-	if err := json.Unmarshal(respBody, &apiResp); err != nil {
-		return MiniMaxTTSRes{
-			Success: false,
-			Message: "解析响应失败：" + err.Error() + "，响应：" + string(respBody),
-		}
-	}
-
-	// 检查 API 返回错误
-	if apiResp.BaseResp.StatusCode != 0 {
-		return MiniMaxTTSRes{
-			Success: false,
-			Message: fmt.Sprintf("API 返回错误：code=%d, msg=%s, resp=%s", apiResp.BaseResp.StatusCode, apiResp.BaseResp.StatusMessage, string(respBody)),
-		}
-	}
-
-	if apiResp.Data.Audio == "" {
-		return MiniMaxTTSRes{
-			Success: false,
-			Message: fmt.Sprintf("API 返回音频为空：resp=%s", string(respBody)),
-		}
-	}
-
-	// 解码音频数据 (可能是 hex 或 base64 编码)
-	var audioData []byte
-	// 先尝试 hex 解码 (MiniMax 返回的是 hex 编码的音频)
-	audioData, err = hex.DecodeString(apiResp.Data.Audio)
-	if err != nil {
-		return MiniMaxTTSRes{
-			Success: false,
-			Message: "音频解码失败：" + err.Error(),
-		}
-	}
-
-	log.Printf("音频数据长度: %d bytes, 前20字节: %v", len(audioData), audioData[:20])
-
-	// 检测音频格式并设置正确的文件扩展名
-	actualExt := detectAudioFormat(audioData)
-	if actualExt != ".mp3" {
-		outputPath = strings.TrimSuffix(outputPath, ".mp3") + actualExt
-		log.Printf("检测到音频格式为 %s，调整输出文件为: %s", actualExt, outputPath)
+	// 根据实际格式调整扩展名
+	if resp.AudioFormat != ".mp3" {
+		outputPath = strings.TrimSuffix(outputPath, ".mp3") + resp.AudioFormat
+		log.Printf("检测到音频格式为 %s，调整输出文件为: %s", resp.AudioFormat, outputPath)
 	}
 
 	// 保存到文件
-	if err := os.WriteFile(outputPath, audioData, 0644); err != nil {
+	if err := os.WriteFile(outputPath, resp.Audio, 0644); err != nil {
 		return MiniMaxTTSRes{
 			Success: false,
 			Message: "保存文件失败：" + err.Error(),
@@ -307,34 +187,6 @@ func GetAvailableVoices() []struct {
 	}
 }
 
-// detectAudioFormat 检测音频格式
-func detectAudioFormat(data []byte) string {
-	if len(data) < 12 {
-		return ".mp3" // 默认
-	}
-	// MP3: FF FB 或 FF F3 或 ID3
-	if data[0] == 0xFF && (data[1]&0xE0) == 0xE0 {
-		return ".mp3"
-	}
-	// WAV: RIFF....WAVE
-	if len(data) >= 12 && string(data[0:4]) == "RIFF" && string(data[8:12]) == "WAVE" {
-		return ".wav"
-	}
-	// OGG: OggS
-	if len(data) >= 4 && string(data[0:4]) == "OggS" {
-		return ".ogg"
-	}
-	// FLAC: fLaC
-	if len(data) >= 4 && string(data[0:4]) == "fLaC" {
-		return ".flac"
-	}
-	// M4A/AAC: ftyp
-	if len(data) >= 8 && string(data[4:8]) == "ftyp" {
-		return ".m4a"
-	}
-	return ".mp3" // 默认
-}
-
 // GetAudioDataUrl 读取音频文件并转换为 data URL (用于前端播放)
 func GetAudioDataUrl(filePath string) string {
 	data, err := os.ReadFile(filePath)
@@ -368,7 +220,7 @@ func GetAudioDataUrl(filePath string) string {
 // GetImageDataUrl 读取图片文件并转换为 HTTP URL
 func GetImageDataUrl(filePath string) string {
 	filePath = strings.ReplaceAll(filePath, "\\", "/")
-	encodedPath := url.QueryEscape(filePath)
+	encodedPath := strings.ReplaceAll(filePath, " ", "%20")
 	return fmt.Sprintf("http://localhost:45670/file?path=%s", encodedPath)
 }
 
@@ -414,17 +266,6 @@ type MiniMaxImageRes struct {
 	Cost       string   `json:"cost"`       // 耗时
 }
 
-// MiniMaxImageResp API 响应结构
-type miniMaxImageResp struct {
-	BaseResp struct {
-		StatusCode    int    `json:"status_code"`
-		StatusMessage string `json:"status_msg"`
-	} `json:"base_resp"`
-	Data struct {
-		ImageURLs []string `json:"image_urls"` // 图片 URL 数组
-	}
-}
-
 // GenerateImage 使用 MiniMax API 根据文本生成图片
 func GenerateImage(req MiniMaxImageReq) MiniMaxImageRes {
 	startTime := time.Now()
@@ -437,14 +278,6 @@ func GenerateImage(req MiniMaxImageReq) MiniMaxImageRes {
 		return MiniMaxImageRes{
 			Success: false,
 			Message: "请输入图片描述文本",
-		}
-	}
-
-	apiKey := os.Getenv("MINIMAX_API_KEY")
-	if apiKey == "" {
-		return MiniMaxImageRes{
-			Success: false,
-			Message: "请配置 MiniMax API Key (环境变量 MINIMAX_API_KEY)",
 		}
 	}
 
@@ -461,160 +294,37 @@ func GenerateImage(req MiniMaxImageReq) MiniMaxImageRes {
 	// 生成输出文件路径
 	timestamp := time.Now().Format("20060102_150405")
 
-	// 调用的 API URL (MiniMax Image Generation API)
-	apiURL := "https://api.minimaxi.com/v1/image_generation"
-
-	// 图片数量，默认9
-	numImages := req.NumImages
-	if numImages <= 0 || numImages > 9 {
-		numImages = 9
-	}
-
-	// 图片宽度，默认1024，取值范围[512, 2048]，必须是8的倍数
-	width := req.Width
-	if width < 512 || width > 2048 || width%8 != 0 {
-		width = 1024
-	}
-
-	// 图片高度，默认1024，取值范围[512, 2048]，必须是8的倍数
-	height := req.Height
-	if height < 512 || height > 2048 || height%8 != 0 {
-		height = 1024
-	}
-
-	// 请求体
-	requestBody := map[string]any{
-		"model":           "image-01",
-		"prompt":          req.Text,
-		"n":               numImages,
-		"width":           width,
-		"height":          height,
-		"response_format": "url", // 返回 URL 格式
-	}
-
-	// 如果有参考图，读取文件并添加到请求体
-	if req.ReferenceImagePath != "" {
-		imageData, err := os.ReadFile(req.ReferenceImagePath)
-		if err != nil {
-			return MiniMaxImageRes{
-				Success: false,
-				Message: "读取参考图失败：" + err.Error(),
-			}
-		}
-		base64Data := base64.StdEncoding.EncodeToString(imageData)
-		mimeType := "image/jpeg"
-		if strings.HasSuffix(strings.ToLower(req.ReferenceImagePath), ".png") {
-			mimeType = "image/png"
-		}
-		requestBody["subject_reference"] = []any{
-			map[string]any{
-				"type":       "character",
-				"image_file": fmt.Sprintf("data:%s;base64,%s", mimeType, base64Data),
-			},
-		}
-	}
-
-	// 打印请求信息
-	requestJSON, _ := json.Marshal(requestBody)
-	reqStr := string(requestJSON)
-	if len(reqStr) > 2000 {
-		reqStr = reqStr[:2000] + "...(省略 " + fmt.Sprintf("%d", len(reqStr)-2000) + " 字符)"
-	}
-	log.Printf("[GenerateImage] 请求信息: %s", reqStr)
-
-	// 发送请求
-	bodyBytes, err := json.Marshal(requestBody)
+	// 通过 RPC 层获取图片 URL 列表
+	client := rpc.NewMiniMaxClient()
+	resp, err := client.GenerateImage(context.Background(), rpc.ImageRequest{
+		Text:               req.Text,
+		NumImages:          req.NumImages,
+		Width:              req.Width,
+		Height:             req.Height,
+		ReferenceImagePath: req.ReferenceImagePath,
+	})
 	if err != nil {
 		return MiniMaxImageRes{
 			Success: false,
-			Message: "请求体构建失败：" + err.Error(),
-		}
-	}
-
-	httpReq, err := http.NewRequest("POST", apiURL, bytes.NewReader(bodyBytes))
-	if err != nil {
-		return MiniMaxImageRes{
-			Success: false,
-			Message: "创建请求失败：" + err.Error(),
-		}
-	}
-
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", "Bearer "+apiKey)
-
-	client := &http.Client{
-		Timeout: 120 * time.Second,
-	}
-
-	resp, err := client.Do(httpReq)
-	if err != nil {
-		return MiniMaxImageRes{
-			Success: false,
-			Message: "请求失败：" + err.Error(),
-		}
-	}
-	defer resp.Body.Close()
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return MiniMaxImageRes{
-			Success: false,
-			Message: "读取响应失败：" + err.Error(),
-		}
-	}
-
-	log.Printf("image resp:%s", string(respBody))
-
-	// 解析响应
-	var apiResp miniMaxImageResp
-	if err := json.Unmarshal(respBody, &apiResp); err != nil {
-		return MiniMaxImageRes{
-			Success: false,
-			Message: "解析响应失败：" + err.Error() + "，响应：" + string(respBody),
-		}
-	}
-
-	// 检查 API 返回错误
-	if apiResp.BaseResp.StatusCode != 0 {
-		return MiniMaxImageRes{
-			Success: false,
-			Message: fmt.Sprintf("API 返回错误：code=%d, msg=%s", apiResp.BaseResp.StatusCode, apiResp.BaseResp.StatusMessage),
-		}
-	}
-
-	// 下载图片
-	if len(apiResp.Data.ImageURLs) == 0 || apiResp.Data.ImageURLs[0] == "" {
-		return MiniMaxImageRes{
-			Success: false,
-			Message: "API 返回图片 URL 为空",
+			Message: err.Error(),
 		}
 	}
 
 	// 下载所有图片
 	var outputPaths []string
-	for i, imgURL := range apiResp.Data.ImageURLs {
-		// 生成输出文件路径
+	for i, imgURL := range resp.ImageURLs {
 		ext := ".jpeg"
 		if strings.Contains(imgURL, ".png") {
 			ext = ".png"
 		}
 		outputPath := filepath.Join(imgDir, fmt.Sprintf("img_%s_%d%s", timestamp, i+1, ext))
 
-		// 下载图片
-		imgResp, err := client.Get(imgURL)
+		imgData, err := client.DownloadImageBytes(context.Background(), imgURL)
 		if err != nil {
 			log.Printf("下载第 %d 张图片失败: %v", i+1, err)
 			continue
 		}
 
-		imgData, err := io.ReadAll(imgResp.Body)
-		imgResp.Body.Close()
-		if err != nil {
-			log.Printf("读取第 %d 张图片数据失败: %v", i+1, err)
-			continue
-		}
-
-		// 保存到文件
 		if err := os.WriteFile(outputPath, imgData, 0644); err != nil {
 			log.Printf("保存第 %d 张图片失败: %v", i+1, err)
 			continue
@@ -790,21 +500,12 @@ type CloneVoiceRes struct {
 
 // CloneVoice 音色克隆
 func CloneVoice(req CloneVoiceReq) CloneVoiceRes {
-	apiKey := os.Getenv("MINIMAX_API_KEY")
-	if apiKey == "" {
-		return CloneVoiceRes{
-			Success: false,
-			Message: "请配置 MiniMax API Key (环境变量 MINIMAX_API_KEY)",
-		}
-	}
-
 	if req.SourceFileID == "" {
 		return CloneVoiceRes{
 			Success: false,
 			Message: "请先上传待克隆音频",
 		}
 	}
-
 	if req.VoiceID == "" {
 		return CloneVoiceRes{
 			Success: false,
@@ -812,84 +513,17 @@ func CloneVoice(req CloneVoiceReq) CloneVoiceRes {
 		}
 	}
 
-	// 调用音色克隆 API
-	apiURL := "https://api.minimaxi.com/v1/voice_clone"
-
-	requestBody := map[string]interface{}{
-		"model": "speech-01",
-		"input": map[string]interface{}{
-			"source": req.SourceFileID,
-		},
-		"voice_id": req.VoiceID,
-	}
-
-	if req.ReferenceText != "" {
-		requestBody["reference_text"] = req.ReferenceText
-	}
-	if req.ReferenceFileID != "" {
-		requestBody["reference"] = req.ReferenceFileID
-	}
-
-	bodyBytes, err := json.Marshal(requestBody)
+	client := rpc.NewMiniMaxClient()
+	_, err := client.CloneVoice(context.Background(), rpc.CloneRequest{
+		SourceFileID:    req.SourceFileID,
+		ReferenceText:   req.ReferenceText,
+		ReferenceFileID: req.ReferenceFileID,
+		VoiceID:         req.VoiceID,
+	})
 	if err != nil {
 		return CloneVoiceRes{
 			Success: false,
-			Message: "请求体构建失败：" + err.Error(),
-		}
-	}
-
-	httpReq, err := http.NewRequest("POST", apiURL, bytes.NewReader(bodyBytes))
-	if err != nil {
-		return CloneVoiceRes{
-			Success: false,
-			Message: "创建请求失败：" + err.Error(),
-		}
-	}
-
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", "Bearer "+apiKey)
-
-	client := &http.Client{
-		Timeout: 60 * time.Second,
-	}
-
-	resp, err := client.Do(httpReq)
-	if err != nil {
-		return CloneVoiceRes{
-			Success: false,
-			Message: "请求失败：" + err.Error(),
-		}
-	}
-	defer resp.Body.Close()
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return CloneVoiceRes{
-			Success: false,
-			Message: "读取响应失败：" + err.Error(),
-		}
-	}
-
-	log.Printf("clone voice resp:%s", string(respBody))
-
-	// 解析响应
-	var apiResp struct {
-		BaseResp struct {
-			StatusCode    int    `json:"status_code"`
-			StatusMessage string `json:"status_msg"`
-		} `json:"base_resp"`
-	}
-	if err := json.Unmarshal(respBody, &apiResp); err != nil {
-		return CloneVoiceRes{
-			Success: false,
-			Message: "解析响应失败：" + err.Error(),
-		}
-	}
-
-	if apiResp.BaseResp.StatusCode != 0 {
-		return CloneVoiceRes{
-			Success: false,
-			Message: fmt.Sprintf("API 返回错误：code=%d, msg=%s", apiResp.BaseResp.StatusCode, apiResp.BaseResp.StatusMessage),
+			Message: err.Error(),
 		}
 	}
 

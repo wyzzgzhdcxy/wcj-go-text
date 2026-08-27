@@ -1,12 +1,12 @@
 package app
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"time"
 
 	"wcj-go-text/golang/myTTS"
+	"wcj-go-text/golang/sqllite"
 
 	"github.com/wyzzgzhdcxy/wcj-go-common/core"
 )
@@ -126,36 +126,12 @@ func (a *App) ListCustomVoices() myTTS.ListCustomVoicesRes {
 
 // SaveImagePrompt 保存图片提示词
 func (a *App) SaveImagePrompt(prompt string) error {
-	if settingsDb == nil {
-		return fmt.Errorf("数据库未初始化")
-	}
-	if prompt == "" {
-		return nil
-	}
-	_, err := settingsDb.Exec(`INSERT OR IGNORE INTO image_prompts(prompt) VALUES(?)`, prompt)
-	return err
+	return sqllite.SaveImagePrompt(prompt)
 }
 
 // GetImagePrompts 获取所有图片提示词
 func (a *App) GetImagePrompts() ([]string, error) {
-	if settingsDb == nil {
-		return nil, fmt.Errorf("数据库未初始化")
-	}
-	rows, err := settingsDb.Query(`SELECT prompt FROM image_prompts ORDER BY created_at DESC LIMIT 50`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var prompts []string
-	for rows.Next() {
-		var prompt string
-		if err := rows.Scan(&prompt); err != nil {
-			continue
-		}
-		prompts = append(prompts, prompt)
-	}
-	return prompts, nil
+	return sqllite.GetImagePrompts()
 }
 
 // TextToSpeechLocal 使用 edge-tts 本地转语音（不需要 API Key）

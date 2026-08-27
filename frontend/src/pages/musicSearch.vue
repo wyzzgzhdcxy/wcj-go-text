@@ -228,7 +228,7 @@
 </template>
 
 <script>
-import { DownloadFile, SelectDirectory, SaveMusicAudioSource } from "../wailsjs/go/app/App.js";
+import { DownloadFile, SelectDirectory, SaveMusicAudioSource, SearchMusic, GetFileInfo } from "../wailsjs/go/app/App.js";
 
 export default {
   name: "MusicSearch",
@@ -260,7 +260,7 @@ export default {
       this.searched = false;
 
       try {
-        const results = await window.go.main.App.SearchMusic(this.searchKeyword);
+        const results = await SearchMusic(this.searchKeyword);
         this.searchResults = results || [];
         this.searched = true;
       } catch (e) {
@@ -347,7 +347,7 @@ export default {
 
     async getFileSize(url, index) {
       try {
-        const fileInfoStr = await window.go.main.App.GetFileInfo(url);
+        const fileInfoStr = await GetFileInfo(url);
         if (fileInfoStr) {
           const info = JSON.parse(fileInfoStr);
           if (info.size > 0) {

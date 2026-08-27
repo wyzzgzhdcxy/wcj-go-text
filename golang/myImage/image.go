@@ -2,6 +2,7 @@ package myImage
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
@@ -12,10 +13,8 @@ import (
 	"image/png"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
 	"unicode/utf8"
 
 	ico "github.com/Kodeworks/golang-image-ico"
@@ -28,6 +27,8 @@ import (
 	"golang.org/x/image/draw"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
+
+	"wcj-go-text/golang/rpc"
 )
 
 func sha256Hash(s string) string {
@@ -195,23 +196,12 @@ func downloadAndCompositeEmoji(text string, dc *gg.Context, width, height int) {
 }
 
 func getEmojiImageURL(emoji string) string {
-	var codes []string
-	for _, r := range emoji {
-		codes = append(codes, fmt.Sprintf("%x", r))
-	}
-	codeStr := strings.Join(codes, "-")
-	return fmt.Sprintf("https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/256x256/%s.png", codeStr)
+	return rpc.BuildTwemojiURL(emoji)
 }
 
 func downloadImage(imgURL string) (image.Image, error) {
-	resp, err := http.Get(imgURL)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	img, _, err := image.Decode(resp.Body)
-	return img, err
+	client := rpc.NewTwemojiClient()
+	return client.DownloadEmojiImageAsImage(context.Background(), imgURL)
 }
 
 func resizeImage(img image.Image, width, height int) image.Image {
@@ -250,19 +240,13 @@ func SaveEmojiToCache(emoji string) (string, string) {
 }
 
 func SaveEmojiToCacheWithDir(emoji string, saveDir string) (string, string) {
-	emojiURL := fmt.Sprintf("https://emoji-route.deno.dev/png/%s", url.PathEscape(emoji))
+	emojiURL := rpc.BuildEmojiRouteURL(emoji)
 	fmt.Printf("emoji URL: %s\n", emojiURL)
 
-	resp, err := http.Get(emojiURL)
+	client := rpc.NewTwemojiClient()
+	img, err := client.DownloadEmojiImageAsImage(context.Background(), emojiURL)
 	if err != nil {
 		fmt.Println("下载emoji图片失败:", err)
-		return "", ""
-	}
-	defer resp.Body.Close()
-
-	img, _, err := image.Decode(resp.Body)
-	if err != nil {
-		fmt.Println("解码emoji图片失败:", err)
 		return "", ""
 	}
 

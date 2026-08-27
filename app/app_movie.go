@@ -18,6 +18,7 @@ import (
 
 	"wcj-go-text/golang"
 	"wcj-go-text/golang/cmdWrapper"
+	"wcj-go-text/golang/sqllite"
 )
 
 // ---------------- 注册电影相关事件 ----------------
@@ -324,7 +325,7 @@ func (a *App) SearchMusic(keyword string) []MusicSearchResult {
 		return nil
 	}
 
-	if resultsJSON, hit := golang.SearchMusicCache(keyword); hit {
+	if resultsJSON, hit := sqllite.SearchMusicCache(keyword); hit {
 		fmt.Println("从缓存获取搜索结果:", keyword)
 		var results []MusicSearchResult
 		if err := json.Unmarshal([]byte(resultsJSON), &results); err == nil {
@@ -337,7 +338,7 @@ func (a *App) SearchMusic(keyword string) []MusicSearchResult {
 	if len(results) > 0 {
 		go func() {
 			if resultsJSON, err := json.Marshal(results); err == nil {
-				if err := golang.SaveSearchResults(keyword, string(resultsJSON)); err != nil {
+				if err := sqllite.SaveSearchResults(keyword, string(resultsJSON)); err != nil {
 					fmt.Println("保存搜索结果失败:", err)
 				}
 			}
@@ -348,7 +349,7 @@ func (a *App) SearchMusic(keyword string) []MusicSearchResult {
 }
 
 func (a *App) SaveMusicAudioSource(songID int64, source, audioURL, picURL, lrcURL string, fileSize int64) error {
-	return golang.SaveAudioSource(songID, source, audioURL, picURL, lrcURL, fileSize)
+	return sqllite.SaveAudioSource(songID, source, audioURL, picURL, lrcURL, fileSize)
 }
 
 func searchNetease(keyword string) []MusicSearchResult {

@@ -2,126 +2,23 @@ package app
 
 import (
 	"bytes"
-	"database/sql"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
-	"time"
 
 	"wcj-go-text/golang/cmdWrapper"
-
-	"github.com/wyzzgzhdcxy/wcj-go-common/core"
+	"wcj-go-text/golang/sqllite"
 )
 
-var (
-	gitDb     *sql.DB
-	gitDbOnce sync.Once
-)
+// GitRepo Git仓库信息（与前端 JSON 字段保持一致）
+type GitRepo = sqllite.GitRepo
 
-// initGitDb 懒加载初始化 Git 工具的 sqlite 数据库（git_sync.db）。
-// 表：git_repos（仓库列表）、sync_logs（同步日志）。
-// 失败时仅记录日志，调用方做 nil 兜底。
-func (a *App) initGitDb() {
-	gitDbOnce.Do(func() {
-		dbPath := filepath.Join(core.GetTempDir(), "data", "sync_list.db")
-		if err := os.MkdirAll(filepath.Dir(dbPath), 0755); err != nil {
-			log.Printf("创建 git 同步数据库目录失败: %v", err)
-			return
-		}
-
-		db, err := sql.Open("sqlite", dbPath)
-		if err != nil {
-			log.Printf("打开 git 同步数据库失败: %v", err)
-			return
-		}
-
-		_, err = db.Exec(`
-			CREATE TABLE IF NOT EXISTS git_repos (
-				id INTEGER PRIMARY KEY AUTOINCREMENT,
-				path TEXT NOT NULL UNIQUE,
-				name TEXT NOT NULL,
-				branch TEXT,
-				remote TEXT,
-				remote_url TEXT,
-				last_sync_time TEXT,
-				status TEXT,
-				enabled INTEGER NOT NULL DEFAULT 1,
-				auto_sync INTEGER NOT NULL DEFAULT 0,
-				commit_only INTEGER NOT NULL DEFAULT 0,
-				created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-				updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-			)
-		`)
-		if err != nil {
-			db.Close()
-			log.Printf("创建 git_repos 表失败: %v", err)
-			return
-		}
-
-		_, err = db.Exec(`CREATE INDEX IF NOT EXISTS idx_git_repos_path ON git_repos(path)`)
-		if err != nil {
-			db.Close()
-			log.Printf("创建 git_repos 索引失败: %v", err)
-			return
-		}
-
-		_, err = db.Exec(`
-			CREATE TABLE IF NOT EXISTS sync_logs (
-				id INTEGER PRIMARY KEY AUTOINCREMENT,
-				repo_name TEXT NOT NULL,
-				repo_path TEXT NOT NULL,
-				time TEXT,
-				success INTEGER NOT NULL DEFAULT 0,
-				message TEXT,
-				commit_log TEXT,
-				pull_log TEXT,
-				push_log TEXT
-			)
-		`)
-		if err != nil {
-			db.Close()
-			log.Printf("创建 sync_logs 表失败: %v", err)
-			return
-		}
-
-		_, err = db.Exec(`CREATE INDEX IF NOT EXISTS idx_sync_logs_repo_path ON sync_logs(repo_path)`)
-		if err != nil {
-			db.Close()
-			log.Printf("创建 sync_logs 索引失败: %v", err)
-			return
-		}
-
-		gitDb = db
-		log.Printf("Git 同步数据库初始化成功: %s", dbPath)
-	})
-}
-
-// ensureGitDb 兜底触发懒加载。
-func (a *App) ensureGitDb() {
-	if gitDb == nil {
-		a.initGitDb()
-	}
-}
+// GitSyncLog 同步日志
+type GitSyncLog = sqllite.GitSyncLog
 
 // ---------- 类型定义 ----------
-
-// GitRepo Git仓库信息
-type GitRepo struct {
-	Path            string `json:"path"`
-	Name            string `json:"name"`
-	Branch          string `json:"branch"`
-	Remote          string `json:"remote"`
-	RemoteUrl       string `json:"remoteUrl"`
-	LastSyncTime    string `json:"lastSyncTime"`
-	Status          string `json:"status"`
-	Enabled         bool   `json:"enabled"`
-	AutoSync        bool   `json:"autoSync"`
-	CommitOnly      bool   `json:"commitOnly"`
-	LastSyncSuccess int    `json:"lastSyncSuccess"` // -1=从未同步, 0=失败, 1=成功
-}
 
 // GitSyncReq Git同步请求
 type GitSyncReq struct {
@@ -171,19 +68,6 @@ type GitRepoListRes struct {
 	Success bool      `json:"success"`
 	Message string    `json:"message"`
 	Repos   []GitRepo `json:"repos"`
-}
-
-// GitSyncLog 同步日志
-type GitSyncLog struct {
-	ID        int    `json:"id"`
-	RepoName  string `json:"repoName"`
-	RepoPath  string `json:"repoPath"`
-	Time      string `json:"time"`
-	Success   bool   `json:"success"`
-	Message   string `json:"message"`
-	CommitLog string `json:"commitLog"`
-	PullLog   string `json:"pullLog"`
-	PushLog   string `json:"pushLog"`
 }
 
 // GetSyncLogsReq 获取同步日志请求
@@ -249,24 +133,7 @@ func runGitDir(dir string, args ...string) (string, error) {
 
 // recordSyncLog 写入 sync_logs 表一条记录。
 func recordSyncLog(repoName, repoPath, message string, success bool, commitLog, pullLog, pushLog string) {
-	if gitDb == nil {
-		return
-	}
-	successInt := 0
-	if success {
-		successInt = 1
-	}
-	_, err := gitDb.Exec(`
-		INSERT INTO sync_logs (repo_name, repo_path, time, success, message, commit_log, pull_log, push_log)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-	`, repoName, repoPath, time.Now().Format("2006-01-02 15:04:05"), successInt, message, commitLog, pullLog, pushLog)
-	if err != nil {
-		log.Printf("写入 sync_log 失败: %v", err)
-	}
-
-	// 更新仓库的 last_sync_time
-	_, _ = gitDb.Exec(`UPDATE git_repos SET last_sync_time = ?, updated_at = CURRENT_TIMESTAMP WHERE path = ?`,
-		time.Now().Format("2006-01-02 15:04:05"), repoPath)
+	sqllite.RecordSyncLog(repoName, repoPath, message, success, commitLog, pullLog, pushLog)
 }
 
 // GetGitRepoInfo 获取 Git 仓库信息
@@ -302,42 +169,17 @@ func (a *App) GetGitRepoInfo(req GetGitRepoInfoReq) GetGitRepoInfoRes {
 
 // SaveGitRepoList 保存仓库列表到 SQLite（整体覆盖：先删后插）。
 func (a *App) SaveGitRepoList(req GitRepoListReq) GitRepoListRes {
-	a.ensureGitDb()
-	if gitDb == nil {
-		return GitRepoListRes{Success: false, Message: "数据库未初始化"}
-	}
-	if _, err := gitDb.Exec("DELETE FROM git_repos"); err != nil {
+	if err := sqllite.ClearGitRepos(); err != nil {
 		return GitRepoListRes{Success: false, Message: "清空仓库列表失败: " + err.Error()}
 	}
-	tx, err := gitDb.Begin()
+	tx, err := sqllite.BeginGitTx()
 	if err != nil {
 		return GitRepoListRes{Success: false, Message: "开始事务失败: " + err.Error()}
 	}
 	defer tx.Rollback()
 
-	stmt, err := tx.Prepare(`
-		INSERT INTO git_repos (path, name, branch, remote, remote_url, last_sync_time, status, enabled, auto_sync, commit_only)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`)
-	if err != nil {
-		return GitRepoListRes{Success: false, Message: "预处理失败: " + err.Error()}
-	}
-	defer stmt.Close()
-
 	for _, repo := range req.Repos {
-		autoSync := 0
-		if repo.AutoSync {
-			autoSync = 1
-		}
-		enabled := 0
-		if repo.Enabled {
-			enabled = 1
-		}
-		commitOnly := 0
-		if repo.CommitOnly {
-			commitOnly = 1
-		}
-		if _, err := stmt.Exec(repo.Path, repo.Name, repo.Branch, repo.Remote, repo.RemoteUrl, repo.LastSyncTime, repo.Status, enabled, autoSync, commitOnly); err != nil {
+		if err := sqllite.InsertGitRepo(tx, repo); err != nil {
 			return GitRepoListRes{Success: false, Message: "保存仓库失败: " + err.Error()}
 		}
 	}
@@ -349,33 +191,12 @@ func (a *App) SaveGitRepoList(req GitRepoListReq) GitRepoListRes {
 
 // LoadGitRepoList 从 SQLite 加载仓库列表，并附带最近一次同步状态。
 func (a *App) LoadGitRepoList() GitRepoListRes {
-	a.ensureGitDb()
-	if gitDb == nil {
-		return GitRepoListRes{Success: false, Message: "数据库未初始化", Repos: []GitRepo{}}
-	}
-	rows, err := gitDb.Query(`
-		SELECT path, name, branch, remote, remote_url, last_sync_time, status, enabled, auto_sync, commit_only,
-			COALESCE((SELECT success FROM sync_logs WHERE repo_path = git_repos.path ORDER BY id DESC LIMIT 1), -1) AS last_sync_success
-		FROM git_repos ORDER BY id
-	`)
+	repos, err := sqllite.LoadGitRepos()
 	if err != nil {
 		return GitRepoListRes{Success: false, Message: "查询失败: " + err.Error(), Repos: []GitRepo{}}
 	}
-	defer rows.Close()
-
-	repos := []GitRepo{}
-	for rows.Next() {
-		var repo GitRepo
-		var enabled, autoSync, commitOnly int
-		var lastSyncSuccess int
-		if err := rows.Scan(&repo.Path, &repo.Name, &repo.Branch, &repo.Remote, &repo.RemoteUrl, &repo.LastSyncTime, &repo.Status, &enabled, &autoSync, &commitOnly, &lastSyncSuccess); err != nil {
-			continue
-		}
-		repo.Enabled = enabled == 1
-		repo.AutoSync = autoSync == 1
-		repo.CommitOnly = commitOnly == 1
-		repo.LastSyncSuccess = lastSyncSuccess
-		repos = append(repos, repo)
+	if repos == nil {
+		repos = []GitRepo{}
 	}
 	return GitRepoListRes{Success: true, Message: fmt.Sprintf("加载了 %d 个仓库", len(repos)), Repos: repos}
 }
@@ -383,7 +204,6 @@ func (a *App) LoadGitRepoList() GitRepoListRes {
 // GitSync 同步 Git 仓库：add → commit → pull → push（commitOnly 时跳过 push）。
 // 原 wcj-go-git 通过 HTTP 调用外部 sync 服务，这里改为内联执行以保持自包含。
 func (a *App) GitSync(req GitSyncReq) GitSyncRes {
-	a.ensureGitDb()
 	results := make([]GitSyncResult, 0, len(req.Repos))
 	if len(req.Repos) == 0 {
 		return GitSyncRes{Success: true, Message: "没有需要同步的仓库", Results: results}
@@ -475,40 +295,12 @@ func syncOneRepo(repo GitRepo) GitSyncResult {
 
 // GetSyncLogs 获取同步日志
 func (a *App) GetSyncLogs(req GetSyncLogsReq) GetSyncLogsRes {
-	a.ensureGitDb()
-	limit := req.Limit
-	if limit <= 0 || limit > 100 {
-		limit = 20
-	}
-	if gitDb == nil {
-		return GetSyncLogsRes{Success: false, Message: "数据库未初始化", Logs: []GitSyncLog{}}
-	}
-
-	query := "SELECT id, repo_name, repo_path, time, success, message, commit_log, pull_log, push_log FROM sync_logs"
-	args := []interface{}{}
-	if req.RepoPath != "" {
-		query += " WHERE repo_path = ?"
-		args = append(args, req.RepoPath)
-	}
-	query += " ORDER BY time DESC LIMIT ?"
-	args = append(args, limit)
-
-	rows, err := gitDb.Query(query, args...)
+	logs, err := sqllite.GetSyncLogs(req.RepoPath, req.Limit)
 	if err != nil {
 		return GetSyncLogsRes{Success: false, Message: "查询失败: " + err.Error(), Logs: []GitSyncLog{}}
 	}
-	defer rows.Close()
-
-	logs := []GitSyncLog{}
-	for rows.Next() {
-		var syncLog GitSyncLog
-		var success int
-		if err := rows.Scan(&syncLog.ID, &syncLog.RepoName, &syncLog.RepoPath, &syncLog.Time, &success, &syncLog.Message, &syncLog.CommitLog, &syncLog.PullLog, &syncLog.PushLog); err != nil {
-			log.Printf("扫描同步日志失败: %v", err)
-			continue
-		}
-		syncLog.Success = success == 1
-		logs = append(logs, syncLog)
+	if logs == nil {
+		logs = []GitSyncLog{}
 	}
 	return GetSyncLogsRes{Success: true, Message: fmt.Sprintf("共 %d 条日志", len(logs)), Logs: logs}
 }

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"wcj-go-text/golang"
 	"wcj-go-text/golang/cmdWrapper"
+	"wcj-go-text/golang/sqllite"
 	"wcj-go-text/golang/utils"
 )
 
@@ -116,136 +116,59 @@ func (a *App) SetEnvVar(name, value string) error {
 }
 
 func (a *App) CmdRecord(command string) {
-	db := golang.GetToolsDB()
-	if db == nil {
-		return
-	}
-	db.Exec("INSERT INTO cmd_history(command) VALUES(?)", command)
+	_ = sqllite.RecordCmdHistory(command)
 }
 
 func (a *App) GetCmdHistory() []string {
-	db := golang.GetToolsDB()
-	if db == nil {
-		return nil
-	}
-	rows, err := db.Query("SELECT command FROM cmd_history ORDER BY created_at DESC LIMIT 50")
+	cmds, err := sqllite.GetCmdHistory()
 	if err != nil {
 		return nil
 	}
-	defer rows.Close()
-	var result []string
-	for rows.Next() {
-		var cmd string
-		rows.Scan(&cmd)
-		result = append(result, cmd)
-	}
-	return result
+	return cmds
 }
 
 func (a *App) RecordToolUsage(link string) {
-	db := golang.GetToolsDB()
-	if db == nil {
-		return
-	}
-	db.Exec(`INSERT INTO tool_usage_stats(link, use_count, last_used)
-		VALUES(?, 1, CURRENT_TIMESTAMP)
-		ON CONFLICT(link) DO UPDATE SET use_count = use_count + 1, last_used = CURRENT_TIMESTAMP`, link)
+	_ = sqllite.RecordToolUsage(link)
 }
 
 func (a *App) GetToolUsageStats() map[string]int {
-	db := golang.GetToolsDB()
-	if db == nil {
-		return nil
-	}
-	rows, err := db.Query("SELECT link, use_count FROM tool_usage_stats ORDER BY use_count DESC LIMIT 20")
+	stats, err := sqllite.GetToolUsageStats()
 	if err != nil {
 		return nil
 	}
-	defer rows.Close()
-	result := make(map[string]int)
-	for rows.Next() {
-		var link string
-		var count int
-		rows.Scan(&link, &count)
-		result[link] = count
-	}
-	return result
+	return stats
 }
 
 func (a *App) NowTime() string {
 	return time.Now().Format("2006-01-02 15:04:05")
 }
 
-// CmdCommand 命令行管理
-type CmdCommand struct {
-	ID          int    `json:"id"`
-	Name        string `json:"name"`
-	Command     string `json:"command"`
-	Description string `json:"description"`
-	CreatedAt   string `json:"createdAt"`
-	UpdatedAt   string `json:"updatedAt"`
-}
+// CmdCommand 命令行管理（与 sqllite.CmdCommand 字段对齐，供 Wails 绑定）
+type CmdCommand = sqllite.CmdCommand
 
 func (a *App) ListCmdCommands() []CmdCommand {
-	db := golang.GetToolsDB()
-	if db == nil {
-		return []CmdCommand{}
-	}
-	rows, err := db.Query("SELECT id, name, command, description, created_at, updated_at FROM cmd_commands ORDER BY id DESC")
+	cmds, err := sqllite.ListCmdCommands()
 	if err != nil {
 		return []CmdCommand{}
-	}
-	defer rows.Close()
-	var cmds []CmdCommand
-	for rows.Next() {
-		var c CmdCommand
-		rows.Scan(&c.ID, &c.Name, &c.Command, &c.Description, &c.CreatedAt, &c.UpdatedAt)
-		cmds = append(cmds, c)
 	}
 	return cmds
 }
 
 func (a *App) AddCmdCommand(cmd CmdCommand) (int, error) {
-	db := golang.GetToolsDB()
-	if db == nil {
-		return 0, fmt.Errorf("数据库未初始化")
-	}
-	result, err := db.Exec("INSERT INTO cmd_commands(name, command, description) VALUES(?, ?, ?)",
-		cmd.Name, cmd.Command, cmd.Description)
-	if err != nil {
-		return 0, err
-	}
-	id, _ := result.LastInsertId()
-	return int(id), nil
+	return sqllite.AddCmdCommand(cmd)
 }
 
 func (a *App) UpdateCmdCommand(cmd CmdCommand) error {
-	db := golang.GetToolsDB()
-	if db == nil {
-		return fmt.Errorf("数据库未初始化")
-	}
-	_, err := db.Exec("UPDATE cmd_commands SET name=?, command=?, description=?, updated_at=datetime('now') WHERE id=?",
-		cmd.Name, cmd.Command, cmd.Description, cmd.ID)
-	return err
+	return sqllite.UpdateCmdCommand(cmd)
 }
 
 func (a *App) DeleteCmdCommand(id int) error {
-	db := golang.GetToolsDB()
-	if db == nil {
-		return fmt.Errorf("数据库未初始化")
-	}
-	_, err := db.Exec("DELETE FROM cmd_commands WHERE id=?", id)
-	return err
+	return sqllite.DeleteCmdCommand(id)
 }
 
 // ExecuteCmdCommand 执行命令行
 func (a *App) ExecuteCmdCommand(id int, command string) (string, error) {
-	db := golang.GetToolsDB()
-	if db == nil {
-		return "", fmt.Errorf("数据库未初始化")
-	}
-	var storedCommand string
-	err := db.QueryRow("SELECT command FROM cmd_commands WHERE id = ?", id).Scan(&storedCommand)
+	storedCommand, err := sqllite.GetCmdCommandByID(id)
 	if err != nil {
 		return "", fmt.Errorf("查询命令行失败: %v", err)
 	}

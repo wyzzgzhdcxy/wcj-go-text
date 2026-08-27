@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"wcj-go-text/golang/myImage"
+	"wcj-go-text/golang/sqllite"
 )
 
 // emojiCacheDir emoji 图片本地缓存目录
@@ -16,13 +17,9 @@ func (a *App) SaveEmojiToCache(emoji string) string {
 	hash := imgSha256Hash(emoji)
 	id := hash[:16]
 
-	if settingsDb != nil {
-		var existingPng []byte
-		err := settingsDb.QueryRow("SELECT png_data FROM emoji_images WHERE id = ?", id).Scan(&existingPng)
-		if err == nil && len(existingPng) > 0 {
-			fmt.Printf("[SaveEmojiToCache] DB hit for id=%s\n", id)
-			return id
-		}
+	if png, err := sqllite.GetEmojiPngData(id); err == nil && len(png) > 0 {
+		fmt.Printf("[SaveEmojiToCache] DB hit for id=%s\n", id)
+		return id
 	}
 
 	fmt.Printf("[SaveEmojiToCache] DB miss for emoji=%s, calling external API\n", emoji)
@@ -43,14 +40,8 @@ func (a *App) SaveEmojiToCache(emoji string) string {
 		return ""
 	}
 
-	if settingsDb != nil {
-		_, err = settingsDb.Exec(
-			"INSERT OR REPLACE INTO emoji_images (id, png_data, ico_data, emoji) VALUES (?, ?, ?, ?)",
-			id, pngData, icoData, emoji,
-		)
-		if err != nil {
-			fmt.Printf("[SaveEmojiToCache] DB insert failed: %v\n", err)
-		}
+	if err := sqllite.SaveEmojiImage(id, pngData, icoData, emoji); err != nil {
+		fmt.Printf("[SaveEmojiToCache] DB insert failed: %v\n", err)
 	}
 
 	fmt.Printf("[SaveEmojiToCache] Success, id=%s, pngSize=%d, icoSize=%d\n", id, len(pngData), len(icoData))
@@ -71,18 +62,15 @@ func (a *App) GetEmojiImageUrl(emoji string, imgType string) string {
 	}
 
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		if settingsDb != nil {
-			var data []byte
-			if imgType == "ico" {
-				err = settingsDb.QueryRow("SELECT ico_data FROM emoji_images WHERE id = ?", id).Scan(&data)
-			} else {
-				err = settingsDb.QueryRow("SELECT png_data FROM emoji_images WHERE id = ?", id).Scan(&data)
-			}
-			if err == nil && len(data) > 0 {
-				os.WriteFile(filePath, data, 0644)
-			} else {
-				a.SaveEmojiToCache(emoji)
-			}
+		var data []byte
+		var readErr error
+		if imgType == "ico" {
+			data, readErr = sqllite.GetEmojiIcoData(id)
+		} else {
+			data, readErr = sqllite.GetEmojiPngData(id)
+		}
+		if readErr == nil && len(data) > 0 {
+			os.WriteFile(filePath, data, 0644)
 		} else {
 			a.SaveEmojiToCache(emoji)
 		}
