@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"time"
 
 	"wcj-go-text/app"
 
@@ -16,11 +17,13 @@ var frontendDist embed.FS
 //go:embed all:tpl
 var tplDist embed.FS
 
-// init 注入嵌入式资源到 app 包，并保留 BuildTime 符号。
+// init 注入嵌入式资源到 app 包，并保留 BuildTime 符号；
+// 同时记录启动起点，使 GetStartupTime 能覆盖 Go runtime + 全部包 init + Wails 启动 + 前端加载耗时。
 func init() {
 	app.Assets = frontendDist
 	app.TplFS = tplDist
 	app.KeepBuildTimeAlive()
+	app.SetStartupStart(time.Now().UnixNano())
 }
 
 func main() {
