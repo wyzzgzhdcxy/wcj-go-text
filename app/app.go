@@ -15,17 +15,17 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"log"
 	"net/url"
 	"os"
 	"path/filepath"
 	goruntime "runtime"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 	"unicode"
 
-	"wcj-go-text/golang"
 	"wcj-go-text/golang/cmdWrapper"
 
 	"github.com/atotto/clipboard"
@@ -43,15 +43,25 @@ var TplFS embed.FS
 
 // App Wails 绑定的应用对象。所有以 (a *App) 为接收者的导出方法都会暴露给前端。
 type App struct {
-	ctx         context.Context
-	startupTime int64
-	templateDir string
+	ctx          context.Context
+	templateDir  string
+	templateOnce sync.Once
 }
 
 // BuildTime 由 wails build 通过 -ldflags 在编译期注入，例如：
 //
 //	wails build -ldflags "-X wcj-go-text/app.BuildTime=2026-08-26 11:00:00"
 var BuildTime string
+
+// startupStart 进程启动起点（包级 var 初始化时打点），由 SetStartupStart 注入。
+// GetStartupTime 用它计算"Go runtime init + 依赖包 init + Wails 启动 + 前端加载"全链路耗时。
+var startupStart int64
+
+// SetStartupStart 由 main.go 在最早时机（init 中）调用一次，
+// 记录从进程启动到 Wails 启动回调开始之间的总耗时起点。
+func SetStartupStart(ns int64) {
+	atomic.StoreInt64(&startupStart, ns)
+}
 
 // KeepBuildTimeAlive 用 SetFinalizer 强制持有 BuildTime 指针，
 // 防止编译器/链接器对 -X wcj-go-text/app.BuildTime 注入的符号进行 dead-code 优化。
@@ -86,21 +96,15 @@ type BuildResult struct {
 
 // NewApp 创建新的 App 实例。Wails 在启动时调用。
 func NewApp() *App {
-	return &App{
-		startupTime: time.Now().UnixNano(),
-	}
+	return &App{}
 }
 
-// Startup Wails 启动回调，保存 ctx 并初始化数据库/模板。
+// Startup Wails 启动回调，仅保存 ctx；DB 初始化已改为懒加载（sync.Once），
+// 模板解压已改为懒加载，在 BuildProject 首次调用时执行。
 // 导出供 main.go 在 options.App.OnStartup 中绑定。
 func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
-	a.extractTemplate("")
 	a.registerMovieEvents()
-	if err := a.initImageSettingsDb(); err != nil {
-		log.Printf("初始化图片配置数据库失败: %v", err)
-	}
-	golang.GetToolsDB()
 }
 
 // OnSecondInstanceLaunch 第二次启动时把已有窗口拉到前台。
@@ -115,9 +119,14 @@ func (a *App) SetTitle(title string) {
 	wailsruntime.WindowSetTitle(a.ctx, title)
 }
 
-// GetStartupTime 获取启动耗时(毫秒)
+// GetStartupTime 返回从 main.init() 打点到当前调用的总耗时(毫秒)，
+// 覆盖 Go runtime 初始化、依赖包 init、Wails 启动、前端加载完整链路。
 func (a *App) GetStartupTime() int64 {
-	return (time.Now().UnixNano() - a.startupTime) / 1000000
+	start := atomic.LoadInt64(&startupStart)
+	if start == 0 {
+		return 0
+	}
+	return (time.Now().UnixNano() - start) / 1000000
 }
 
 // SelectFile 打开文件选择对话框
@@ -307,6 +316,7 @@ func reverseString(s string) string {
 
 // extractTemplate 将内嵌的 my_deepseek.zip 模板解压到 targetDir。
 // targetDir 为空时回退到 %LOCALAPPDATA%\WailsTemplate\my_deepseek。
+// 若目标目录已存在且非空则跳过解压（懒加载：避免每次启动都重写磁盘）。
 func (a *App) extractTemplate(targetDir string) {
 	if targetDir == "" {
 		localAppData := os.Getenv("LOCALAPPDATA")
@@ -314,6 +324,12 @@ func (a *App) extractTemplate(targetDir string) {
 			localAppData = os.TempDir()
 		}
 		targetDir = filepath.Join(localAppData, "WailsTemplate", "my_deepseek")
+	}
+
+	// 已存在且非空：复用现有目录，避免每次启动都重写整个 wails 脚手架
+	if entries, err := os.ReadDir(targetDir); err == nil && len(entries) > 0 {
+		a.templateDir = targetDir
+		return
 	}
 
 	os.RemoveAll(targetDir)
@@ -396,8 +412,12 @@ func (a *App) BuildProject(config ProjectConfig) BuildResult {
 		return BuildResult{false, "请填写应用名称"}
 	}
 
+	// 懒加载：首次调用时才解压模板到磁盘（已存在则复用）
+	a.templateOnce.Do(func() {
+		a.extractTemplate("")
+	})
+
 	log("📦 开始打包...")
-	a.extractTemplate("")
 
 	log("⚙ 生成配置...")
 	if err := updateTemplateFiles(a.templateDir, config.AppName, config.Title, config.RedirectURL); err != nil {

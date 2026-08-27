@@ -1,8 +1,18 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import { SetTitle } from '../../wailsjs/go/app/App.js';
 
-const routes = [
-    {path: '/', redirect: '/textCommonEncode'},
+const LAST_ROUTE_KEY = 'wcj_last_route';
+
+function getLastRoute() {
+    try {
+        const v = localStorage.getItem(LAST_ROUTE_KEY);
+        return v && v.startsWith('/') && v !== '/' ? v : null;
+    } catch (e) {
+        return null;
+    }
+}
+
+const routeDefs = [
     {path: '/textCommonEncode', component: () => import('../textCommonEncode.vue'), meta: { title: '常用编码' }},
     {path: '/textHashEncode', component: () => import('../textHashEncode.vue'), meta: { title: '哈希编码' }},
     {path: '/textNormal', component: () => import('../textNormal.vue'), meta: { title: '普通文本' }},
@@ -53,6 +63,15 @@ const routes = [
     {path: '/menuSettings', component: () => import('../menuSettings.vue'), meta: { title: '菜单设置' }},
 ];
 
+const validPaths = new Set(routeDefs.map(r => r.path));
+const savedRoute = getLastRoute();
+const homePath = savedRoute && validPaths.has(savedRoute) ? savedRoute : '/textCommonEncode';
+
+const routes = [
+    {path: '/', redirect: homePath},
+    ...routeDefs,
+];
+
 const router = createRouter({
     history: createWebHashHistory(),
     routes,
@@ -65,6 +84,14 @@ router.beforeEach((to, from, next) => {
         SetTitle(title);
     }
     next();
+});
+
+router.afterEach((to) => {
+    if (to.path && to.path !== '/') {
+        try {
+            localStorage.setItem(LAST_ROUTE_KEY, to.path);
+        } catch (e) { /* ignore */ }
+    }
 });
 
 export default router;

@@ -6,21 +6,30 @@
 }
 
 .page-title {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
   color: #303133;
   margin-bottom: 24px;
   display: flex;
   align-items: center;
   gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #ebeef5;
 }
 
 .shutdown-card {
   background: #fff;
   border: 1px solid #e8eaed;
-  border-radius: 8px;
-  padding: 24px;
+  border-radius: 10px;
+  padding: 24px 28px;
   margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.shutdown-card:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
 }
 
 .card-title {
@@ -28,16 +37,23 @@
   font-weight: 600;
   color: #303133;
   margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .shutdown-option {
-  margin-bottom: 20px;
+  margin-bottom: 4px;
+}
+
+.shutdown-option:last-child {
+  margin-bottom: 0;
 }
 
 .option-label {
   font-size: 14px;
   color: #606266;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   display: block;
 }
 
@@ -49,7 +65,7 @@
 }
 
 .el-input-number {
-  width: 200px;
+  width: 240px;
 }
 
 .result-text {
@@ -97,7 +113,13 @@
       <div class="shutdown-option">
         <label class="option-label">设置倒计时（秒）：</label>
         <div class="option-row">
-          <el-input-number v-model="shutdownSeconds" :min="1" :max="3600"></el-input-number>
+          <el-input-number
+            v-model="shutdownSeconds"
+            :min="1"
+            :max="3600"
+            :step="60"
+            controls-position="right"
+          ></el-input-number>
           <el-button type="primary" @click="shutdownAfterSeconds">执行关机</el-button>
         </div>
         <div class="warning-text">提示：设置后将立即执行关机倒计时</div>
@@ -141,7 +163,11 @@
     <div class="shutdown-card">
       <div class="card-title">❌ 取消关机</div>
       <div class="shutdown-option">
-        <el-button type="warning" @click="cancelShutdown">取消关机计划</el-button>
+        <label class="option-label">操作：</label>
+        <div class="option-row">
+          <el-button type="warning" @click="cancelShutdown">取消关机计划</el-button>
+        </div>
+        <div class="warning-text">提示：如已设置关机计划，点击此按钮可取消</div>
       </div>
     </div>
 

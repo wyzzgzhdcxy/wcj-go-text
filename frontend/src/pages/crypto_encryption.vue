@@ -2,7 +2,7 @@
   <el-tabs v-model="activeName" @tab-click="handleClick" :tab-position="'left'">
     <el-tab-pane name="genKey" style="width:1100px;">
       <template #label>
-        <span class="fa-solid fa-square-caret-right icon_color1" style="font-size: 20px;"></span>
+        <el-icon class="icon_color1" :size="20"><CaretRight /></el-icon>
         <span style="font-size: 20px">RSA生成密钥</span>
       </template>
         <div class="left" id="mainLeft">
@@ -17,7 +17,7 @@
     </el-tab-pane>
     <el-tab-pane name="cryptoStr" style="width: 1100px">
       <template #label>
-        <span class="fa-solid fa-square-caret-right icon_color1" style="font-size: 20px;"></span>
+        <el-icon class="icon_color1" :size="20"><CaretRight /></el-icon>
         <span style="font-size: 20px">RSA加密字符串</span>
       </template>
         <!-- 密钥导入区域 -->
@@ -80,7 +80,7 @@
     </el-tab-pane>
     <el-tab-pane name="cryptoFile"  style="width: 1100px">
       <template #label>
-        <span class="fa-solid fa-square-caret-right icon_color1" style="font-size: 20px;"></span>
+        <el-icon class="icon_color1" :size="20"><CaretRight /></el-icon>
         <span style="font-size: 20px">RSA加密文件</span>
       </template>
         <!-- 密钥导入区域 -->
@@ -169,7 +169,7 @@
 </template>
 
 <script>
-import {Document} from '@element-plus/icons-vue'
+import {CaretRight, Document} from '@element-plus/icons-vue'
 import {GenerateKey, OpenTmpDir, RsaCryptoStr, RsaDeCryptoStr, SelectFile} from "../wailsjs/go/app/App.js";
 
 export default {

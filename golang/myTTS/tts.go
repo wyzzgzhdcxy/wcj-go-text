@@ -24,9 +24,16 @@ import (
 
 // MiniMax TTS API 相关结构
 
+// maskKey 返回 API Key 的掩码字符串，只保留末尾 8 位，避免完整密钥写入日志。
+func maskKey(s string) string {
+	if len(s) <= 8 {
+		return "****"
+	}
+	return "****" + s[len(s)-8:]
+}
+
 type MiniMaxTTsReq struct {
 	Text    string `json:"text"`    // 要转换的文本
-	ApiKey  string `json:"apiKey"`  // MiniMax API Key
 	VoiceID string `json:"voiceId"` // 音色 ID，默认 "longxia"
 }
 
@@ -59,10 +66,7 @@ func TextToSpeech(req MiniMaxTTsReq) MiniMaxTTSRes {
 		}
 	}
 
-	apiKey := req.ApiKey
-	if apiKey == "" {
-		apiKey = os.Getenv("MINIMAX_API_KEY")
-	}
+	apiKey := os.Getenv("MINIMAX_API_KEY")
 	if apiKey == "" {
 		return MiniMaxTTSRes{
 			Success: false,
@@ -131,7 +135,7 @@ func TextToSpeech(req MiniMaxTTsReq) MiniMaxTTSRes {
 		}
 	}
 
-	log.Printf("key:%s", apiKey)
+	log.Printf("key:%s", maskKey(apiKey))
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("Authorization", "Bearer "+apiKey)
 
@@ -397,7 +401,6 @@ func OpenAudioFolder() string {
 
 type MiniMaxImageReq struct {
 	Text               string `json:"text"`                 // 图片描述文本
-	ApiKey             string `json:"apiKey"`               // MiniMax API Key
 	NumImages          int    `json:"numImages"`            // 生成图片数量，默认9
 	Width              int    `json:"width"`                // 生成图片宽度（像素），取值范围[512, 2048]，必须是8的倍数
 	Height             int    `json:"height"`               // 生成图片高度（像素），取值范围[512, 2048]，必须是8的倍数
@@ -437,10 +440,7 @@ func GenerateImage(req MiniMaxImageReq) MiniMaxImageRes {
 		}
 	}
 
-	apiKey := req.ApiKey
-	if apiKey == "" {
-		apiKey = os.Getenv("MINIMAX_API_KEY")
-	}
+	apiKey := os.Getenv("MINIMAX_API_KEY")
 	if apiKey == "" {
 		return MiniMaxImageRes{
 			Success: false,

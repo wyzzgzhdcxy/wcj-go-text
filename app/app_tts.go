@@ -14,7 +14,6 @@ import (
 // GenerateImageReq 图片生成请求
 type GenerateImageReq struct {
 	Text               string `json:"text"`
-	ApiKey             string `json:"apiKey"`
 	NumImages          int    `json:"numImages"`
 	Width              int    `json:"width"`
 	Height             int    `json:"height"`
@@ -31,14 +30,8 @@ type GenerateImageRes struct {
 
 // GenerateImage 使用 MiniMax API 生成图片
 func (a *App) GenerateImage(req GenerateImageReq) GenerateImageRes {
-	apiKey := req.ApiKey
-	if apiKey == "" {
-		apiKey = a.GetConfigKey("minimax_api_key")
-	}
-
 	imgReq := myTTS.MiniMaxImageReq{
 		Text:               req.Text,
-		ApiKey:             apiKey,
 		NumImages:          req.NumImages,
 		Width:              req.Width,
 		Height:             req.Height,
@@ -57,7 +50,6 @@ func (a *App) GenerateImage(req GenerateImageReq) GenerateImageRes {
 // TextToSpeechReq 文字转语音请求
 type TextToSpeechReq struct {
 	Text    string `json:"text"`
-	ApiKey  string `json:"apiKey"`
 	VoiceID string `json:"voiceId"`
 }
 
@@ -71,14 +63,8 @@ type TextToSpeechRes struct {
 
 // TextToSpeech 使用 MiniMax TTS 将文本转换为语音
 func (a *App) TextToSpeech(req TextToSpeechReq) TextToSpeechRes {
-	apiKey := req.ApiKey
-	if apiKey == "" {
-		apiKey = a.GetConfigKey("minimax_api_key")
-	}
-
 	ttsReq := myTTS.MiniMaxTTsReq{
 		Text:    req.Text,
-		ApiKey:  apiKey,
 		VoiceID: req.VoiceID,
 	}
 

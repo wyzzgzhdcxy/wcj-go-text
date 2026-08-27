@@ -115,7 +115,17 @@ func createTables() {
 }
 
 func getAppDataDir() string {
-	return "C:\\Users\\wangchaojun\\AppData\\Local\\wtools\\data"
+	// Windows 下优先使用 %LOCALAPPDATA% (%AppData%\Local)，与原硬编码路径语义一致；
+	// 缺失时回退到用户主目录或临时目录，避免换用户/换机器后写错位置。
+	dir := os.Getenv("LOCALAPPDATA")
+	if dir == "" {
+		if home, err := os.UserHomeDir(); err == nil && home != "" {
+			dir = filepath.Join(home, "AppData", "Local")
+		} else {
+			dir = os.TempDir()
+		}
+	}
+	return filepath.Join(dir, "wtools", "data")
 }
 
 // SearchMusicCache 搜索音乐（先查缓存），返回JSON原始数据
