@@ -106,7 +106,7 @@
 
 <script>
 import {ElNotification} from "element-plus";
-import {SaveEmojiToCache, OpenEmojiFolder, GetEmojiImageUrl} from "../wailsjs/go/main/App.js";
+import {SaveEmojiToCache, OpenEmojiFolder, GetEmojiImageUrl} from "../wailsjs/go/app/App.js";
 
 export default {
   data() {

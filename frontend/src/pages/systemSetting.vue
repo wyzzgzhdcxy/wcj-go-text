@@ -80,7 +80,7 @@ table {
 </template>
 
 <script>
-import {AddConfigValue, DeleteConfig, ListConfig} from "../wailsjs/go/main/App.js";
+import {AddConfigValue, DeleteConfig, ListConfig} from "../wailsjs/go/app/App.js";
 import {Delete} from "@element-plus/icons-vue";
 
 export default {

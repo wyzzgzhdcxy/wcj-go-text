@@ -15,7 +15,7 @@
 </template>
 
 <script>
-import {EvaluableExpression} from "../wailsjs/go/main/App.js";
+import {EvaluableExpression} from "../wailsjs/go/app/App.js";
 
 export default {
   data() {

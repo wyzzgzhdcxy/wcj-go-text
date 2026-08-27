@@ -19,7 +19,7 @@
 </template>
 
 <script>
-import {ListFile, Recovery, RenameFile, CleanFilename, SelectDirectory} from "../wailsjs/go/main/App.js";
+import {ListFile, Recovery, RenameFile, CleanFilename, SelectDirectory} from "../wailsjs/go/app/App.js";
 
 export default {
   data() {

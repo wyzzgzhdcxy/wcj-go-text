@@ -145,7 +145,7 @@
 </template>
 
 <script>
-import { DownloadFile, GetFileInfo, GetRedirectUrl, OpenUrl, SelectDirectory } from "../wailsjs/go/main/App.js";
+import { DownloadFile, GetFileInfo, GetRedirectUrl, OpenUrl, SelectDirectory } from "../wailsjs/go/app/App.js";
 
 export default {
   name: "MusicSource",

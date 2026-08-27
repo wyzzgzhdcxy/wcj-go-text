@@ -228,7 +228,7 @@
 </template>
 
 <script>
-import { DownloadFile, SelectDirectory, SaveMusicAudioSource } from "../wailsjs/go/main/App.js";
+import { DownloadFile, SelectDirectory, SaveMusicAudioSource } from "../wailsjs/go/app/App.js";
 
 export default {
   name: "MusicSearch",

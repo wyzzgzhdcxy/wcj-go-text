@@ -59,6 +59,26 @@ func WithStderr(buf *bytes.Buffer) Option {
 	}
 }
 
+// Command 返回一个预配置好的 *exec.Cmd：Windows 上自动设置 HideWindow，
+// 避免 GUI 程序打包后子进程弹出黑色控制台窗口。调用方仍可自行设置
+// Dir/Stdout/Stderr/ExtraFiles 等字段。
+func Command(name string, args ...string) *exec.Cmd {
+	cmd := exec.Command(name, args...)
+	applySysProcAttr(cmd)
+	return cmd
+}
+
+func applySysProcAttr(cmd *exec.Cmd) {
+	if runtime.GOOS != "windows" {
+		return
+	}
+	if cmd.SysProcAttr == nil {
+		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+		return
+	}
+	cmd.SysProcAttr.HideWindow = true
+}
+
 // createCommand creates an exec.Cmd with the given options
 func createCommand(name string, args []string, opts Options) *exec.Cmd {
 	cmd := exec.Command(name, args...)
@@ -82,7 +102,7 @@ func createCommand(name string, args []string, opts Options) *exec.Cmd {
 
 	// Hide window on Windows if requested
 	if runtime.GOOS == "windows" && opts.HideWindow {
-		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+		applySysProcAttr(cmd)
 	}
 
 	return cmd

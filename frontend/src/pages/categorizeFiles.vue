@@ -27,7 +27,7 @@
 </template>
 
 <script>
-import {CategorizeFiles, GetFilePrefixesInDir} from "../wailsjs/go/main/App.js";
+import {CategorizeFiles, GetFilePrefixesInDir} from "../wailsjs/go/app/App.js";
 
 
 export default {

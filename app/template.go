@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"bytes"
@@ -193,14 +193,14 @@ func convertPNGToICO(pngPath, icoPath string) error {
 
 	// ICONDIRENTRY (16 bytes)
 	imageOffset := uint32(6 + 16) // header + one entry
-	binary.Write(&buf, le, uint8(0))              // width  (0 = 256)
-	binary.Write(&buf, le, uint8(0))              // height (0 = 256)
-	binary.Write(&buf, le, uint8(0))              // color count
-	binary.Write(&buf, le, uint8(0))              // reserved
-	binary.Write(&buf, le, uint16(1))             // planes
-	binary.Write(&buf, le, uint16(32))            // bit count
-	binary.Write(&buf, le, uint32(len(pngData)))  // bytes in resource
-	binary.Write(&buf, le, imageOffset)           // offset to image data
+	binary.Write(&buf, le, uint8(0))             // width  (0 = 256)
+	binary.Write(&buf, le, uint8(0))             // height (0 = 256)
+	binary.Write(&buf, le, uint8(0))             // color count
+	binary.Write(&buf, le, uint8(0))             // reserved
+	binary.Write(&buf, le, uint16(1))            // planes
+	binary.Write(&buf, le, uint16(32))           // bit count
+	binary.Write(&buf, le, uint32(len(pngData))) // bytes in resource
+	binary.Write(&buf, le, imageOffset)          // offset to image data
 
 	// PNG data
 	buf.Write(pngData)

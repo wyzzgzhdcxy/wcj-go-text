@@ -153,7 +153,7 @@
 </template>
 
 <script>
-import {ShutdownAfterSeconds, ShutdownAt, CancelShutdown, TurnOffDisplayString} from "../wailsjs/go/main/App.js";
+import {ShutdownAfterSeconds, ShutdownAt, CancelShutdown, TurnOffDisplayString} from "../wailsjs/go/app/App.js";
 import dayjs from 'dayjs';
 
 export default {

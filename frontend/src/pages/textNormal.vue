@@ -38,7 +38,7 @@
 </template>
 
 <script>
-import { CopyToClipboard, TextEncode } from "../wailsjs/go/main/App.js";
+import { CopyToClipboard, TextEncode } from "../wailsjs/go/app/App.js";
 import { ElNotification } from "element-plus";
 
 export default {

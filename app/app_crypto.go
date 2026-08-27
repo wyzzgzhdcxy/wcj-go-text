@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"wcj-go-text/golang/myCrypto"

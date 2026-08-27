@@ -394,7 +394,7 @@
 </template>
 
 <script>
-import {TextToSpeech, GetAvailableVoices, OpenAudioFolder, GetAudioDataUrl, CloneVoice, ListCustomVoices} from "../wailsjs/go/main/App.js";
+import {TextToSpeech, GetAvailableVoices, OpenAudioFolder, GetAudioDataUrl, CloneVoice, ListCustomVoices} from "../wailsjs/go/app/App.js";
 
 export default {
   name: 'TextToSpeech',

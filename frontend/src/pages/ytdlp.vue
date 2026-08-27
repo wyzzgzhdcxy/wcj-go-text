@@ -407,7 +407,7 @@ import {
   GetYtDlpDownloadPath,
   CheckYtDlpDeps,
   SelectDirectory,
-} from "../wailsjs/go/main/App.js";
+} from "../wailsjs/go/app/App.js";
 
 export default {
   name: "Ytdlp",

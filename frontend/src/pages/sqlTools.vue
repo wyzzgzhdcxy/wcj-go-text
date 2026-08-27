@@ -44,7 +44,7 @@ import {
   GetLastConnUrl,
   OpenExplorer,
   ReadDemoFile
-} from "../wailsjs/go/main/App.js";
+} from "../wailsjs/go/app/App.js";
 import MyJavaEditor from "./component/myJavaEditor.vue";
 import MySqlEditor from "./component/mySqlEditor.vue";
 

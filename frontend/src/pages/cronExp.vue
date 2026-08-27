@@ -90,7 +90,7 @@ table {
 <script>
 import SingleTable from "./component/singleTable.vue";
 import dayjs from "dayjs";
-import {NextTimeList} from "../wailsjs/go/main/App.js";
+import {NextTimeList} from "../wailsjs/go/app/App.js";
 
 
 export default {

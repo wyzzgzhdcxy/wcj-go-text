@@ -75,7 +75,7 @@ table {
 </template>
 
 <script>
-import {Font2Image, OpenImgExplorer, PngToIcon, SelectFile} from "../wailsjs/go/main/App.js";
+import {Font2Image, OpenImgExplorer, PngToIcon, SelectFile} from "../wailsjs/go/app/App.js";
 import {ElNotification} from "element-plus";
 
 export default {

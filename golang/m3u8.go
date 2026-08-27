@@ -5,17 +5,18 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
+
 	"github.com/wyzzgzhdcxy/wcj-go-common/core"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
+
+	"wcj-go-text/golang/cmdWrapper"
 )
 
 func DownloadM3u8(url string, fn string, dir string, threadCount int) {
@@ -25,13 +26,12 @@ func DownloadM3u8(url string, fn string, dir string, threadCount int) {
 	}
 	os.MkdirAll(dir, 0755)
 	os.MkdirAll(core.GetTempDir()+"/tmp", 0755)
-	cmd := exec.Command("N_m3u8DL-RE", url,
+	cmd := cmdWrapper.Command("N_m3u8DL-RE", url,
 		"--thread-count", strconv.Itoa(threadCount),
 		"--save-name", fn,
 		"--save-dir", dir,
 		"--tmp-dir", core.GetTempDir()+"/tmp",
 	)
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	cmd.Run()
 }
 
@@ -42,13 +42,12 @@ func DownloadM3u8WithProgress(url string, fn string, dir string, threadCount int
 	os.MkdirAll(dir, 0755)
 	os.MkdirAll(tmpDir, 0755)
 
-	cmd := exec.Command("N_m3u8DL-RE", url,
+	cmd := cmdWrapper.Command("N_m3u8DL-RE", url,
 		"--thread-count", strconv.Itoa(threadCount),
 		"--save-name", fn,
 		"--save-dir", dir,
 		"--tmp-dir", tmpDir,
 	)
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {

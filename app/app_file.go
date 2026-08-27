@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"bufio"
@@ -253,10 +253,10 @@ func (a *App) TurnOffDisplayString() error {
 }
 
 func (a *App) ListAssets() ([]string, error) {
-	if assetsFS == (embed.FS{}) {
+	if Assets == (embed.FS{}) {
 		return nil, nil
 	}
-	entries, err := assetsFS.ReadDir("config")
+	entries, err := Assets.ReadDir("config")
 	if err != nil {
 		return nil, err
 	}

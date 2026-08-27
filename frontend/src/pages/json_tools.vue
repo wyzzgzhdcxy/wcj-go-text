@@ -63,7 +63,7 @@ div {
 
 
 <script>
-import {GenGoCodeByJsonStr, GenJavaCodeByJsonStr, ReadDemoFile} from "../wailsjs/go/main/App.js";
+import {GenGoCodeByJsonStr, GenJavaCodeByJsonStr, ReadDemoFile} from "../wailsjs/go/app/App.js";
 import {w} from "./js/fun.js";
 
 

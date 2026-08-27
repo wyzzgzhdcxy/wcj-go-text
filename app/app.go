@@ -1,4 +1,6 @@
-package main
+// Package app 包含 Wails 应用的全部 UI 绑定方法、App 生命周期、构建管线等。
+// 由 main.go 通过 wcj-go-text/app 引入并绑定到前端。
+package app
 
 import (
 	"archive/zip"
@@ -16,34 +18,49 @@ import (
 	"log"
 	"net/url"
 	"os"
-	"os/exec"
 	"path/filepath"
+	goruntime "runtime"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 	"unicode"
 
 	"wcj-go-text/golang"
+	"wcj-go-text/golang/cmdWrapper"
 
 	"github.com/atotto/clipboard"
 	"github.com/wailsapp/wails/v2/pkg/options"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-//go:embed all:tpl
-var templateFS embed.FS
+// Assets 嵌入式前端资源（frontend/dist），由 main.go 在 init() 中注入。
+// app_settings.go / app_file.go / ReadAssetFile 都通过它读取内嵌文件。
+var Assets embed.FS
 
-// App struct
+// TplFS 嵌入式模板资源（tpl 目录），由 main.go 在 init() 中注入，
+// 用于应用生成器（BuildProject）展开 my_deepseek.zip 模板。
+var TplFS embed.FS
+
+// App Wails 绑定的应用对象。所有以 (a *App) 为接收者的导出方法都会暴露给前端。
 type App struct {
-	ctx          context.Context
-	startupTime  int64
-	templateDir  string
+	ctx         context.Context
+	startupTime int64
+	templateDir string
 }
 
 // BuildTime 由 wails build 通过 -ldflags 在编译期注入，例如：
-//   wails build -ldflags "-X main.BuildTime=2026-08-26 11:00:00"
+//
+//	wails build -ldflags "-X wcj-go-text/app.BuildTime=2026-08-26 11:00:00"
 var BuildTime string
+
+// KeepBuildTimeAlive 用 SetFinalizer 强制持有 BuildTime 指针，
+// 防止编译器/链接器对 -X wcj-go-text/app.BuildTime 注入的符号进行 dead-code 优化。
+// SetFinalizer 会让编译器无法证明该值无副作用，从而保留符号。
+// 由 main.go 在 init() 中调用。
+func KeepBuildTimeAlive() {
+	v := BuildTime
+	goruntime.SetFinalizer(&v, func(p *string) {})
+}
 
 // GetBuildTime 返回构建时间（注入自 -ldflags）。
 //
@@ -52,7 +69,7 @@ func (a *App) GetBuildTime() string {
 	return BuildTime
 }
 
-// ProjectConfig holds all build configuration
+// ProjectConfig 应用生成器配置
 type ProjectConfig struct {
 	AppName     string `json:"appName"`
 	Title       string `json:"title"`
@@ -61,21 +78,22 @@ type ProjectConfig struct {
 	RedirectURL string `json:"redirectURL"`
 }
 
-// BuildResult holds the result of a build operation
+// BuildResult 应用生成器结果
 type BuildResult struct {
 	Success bool   `json:"success"`
 	Message string `json:"message"`
 }
 
-// NewApp creates a new App application struct
+// NewApp 创建新的 App 实例。Wails 在启动时调用。
 func NewApp() *App {
 	return &App{
 		startupTime: time.Now().UnixNano(),
 	}
 }
 
-// startup is called when the app starts. The context is saved
-func (a *App) startup(ctx context.Context) {
+// Startup Wails 启动回调，保存 ctx 并初始化数据库/模板。
+// 导出供 main.go 在 options.App.OnStartup 中绑定。
+func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
 	a.extractTemplate("")
 	a.registerMovieEvents()
@@ -85,15 +103,16 @@ func (a *App) startup(ctx context.Context) {
 	golang.GetToolsDB()
 }
 
-
-func (a *App) onSecondInstanceLaunch(_ options.SecondInstanceData) {
-	runtime.WindowUnminimise(a.ctx)
-	runtime.WindowShow(a.ctx)
+// OnSecondInstanceLaunch 第二次启动时把已有窗口拉到前台。
+// 导出供 main.go 在 SingleInstanceLock.OnSecondInstanceLaunch 中绑定。
+func (a *App) OnSecondInstanceLaunch(_ options.SecondInstanceData) {
+	wailsruntime.WindowUnminimise(a.ctx)
+	wailsruntime.WindowShow(a.ctx)
 }
 
 // SetTitle 更新窗口标题
 func (a *App) SetTitle(title string) {
-	runtime.WindowSetTitle(a.ctx, title)
+	wailsruntime.WindowSetTitle(a.ctx, title)
 }
 
 // GetStartupTime 获取启动耗时(毫秒)
@@ -103,7 +122,7 @@ func (a *App) GetStartupTime() int64 {
 
 // SelectFile 打开文件选择对话框
 func (a *App) SelectFile() (string, error) {
-	selection, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+	selection, err := wailsruntime.OpenFileDialog(a.ctx, wailsruntime.OpenDialogOptions{
 		Title: "选择文件",
 	})
 	if err != nil {
@@ -114,10 +133,7 @@ func (a *App) SelectFile() (string, error) {
 
 // ReadAssetFile 读取嵌入资源文件
 func (a *App) ReadAssetFile(path string) (string, error) {
-	if assetsFS == (embed.FS{}) {
-		return "", fmt.Errorf("assets not initialized")
-	}
-	data, err := assetsFS.ReadFile(strings.TrimPrefix(path, "/"))
+	data, err := Assets.ReadFile(strings.TrimPrefix(path, "/"))
 	if err != nil {
 		return "", err
 	}
@@ -289,8 +305,8 @@ func reverseString(s string) string {
 
 // ---------- 应用生成器 ----------
 
-// extractTemplate extracts the embedded zip template to targetDir.
-// If targetDir is empty, it falls back to %LOCALAPPDATA%\WailsTemplate\my_deepseek.
+// extractTemplate 将内嵌的 my_deepseek.zip 模板解压到 targetDir。
+// targetDir 为空时回退到 %LOCALAPPDATA%\WailsTemplate\my_deepseek。
 func (a *App) extractTemplate(targetDir string) {
 	if targetDir == "" {
 		localAppData := os.Getenv("LOCALAPPDATA")
@@ -303,7 +319,7 @@ func (a *App) extractTemplate(targetDir string) {
 	os.RemoveAll(targetDir)
 	os.MkdirAll(targetDir, 0755)
 
-	zipData, err := templateFS.ReadFile("tpl/my_deepseek.zip")
+	zipData, err := TplFS.ReadFile("tpl/my_deepseek.zip")
 	if err != nil {
 		return
 	}
@@ -340,14 +356,14 @@ func (a *App) extractTemplate(targetDir string) {
 	a.templateDir = targetDir
 }
 
-// GetTemplateDir returns the path to the extracted template directory
+// GetTemplateDir 返回已解压模板目录的路径
 func (a *App) GetTemplateDir() string {
 	return a.templateDir
 }
 
-// SelectOutputDir opens a directory dialog for selecting the output directory
+// SelectOutputDir 打开目录选择对话框，用于选择打包输出目录
 func (a *App) SelectOutputDir() string {
-	dir, err := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{
+	dir, err := wailsruntime.OpenDirectoryDialog(a.ctx, wailsruntime.OpenDialogOptions{
 		Title: "选择打包输出目录",
 	})
 	if err != nil {
@@ -356,11 +372,11 @@ func (a *App) SelectOutputDir() string {
 	return dir
 }
 
-// SelectIconFile opens a file dialog for selecting an icon
+// SelectIconFile 打开图标文件选择对话框
 func (a *App) SelectIconFile() string {
-	file, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+	file, err := wailsruntime.OpenFileDialog(a.ctx, wailsruntime.OpenDialogOptions{
 		Title: "选择图标文件 (ICO/PNG)",
-		Filters: []runtime.FileFilter{
+		Filters: []wailsruntime.FileFilter{
 			{DisplayName: "图标文件 (*.ico;*.png)", Pattern: "*.ico;*.png"},
 		},
 	})
@@ -370,7 +386,7 @@ func (a *App) SelectIconFile() string {
 	return file
 }
 
-// BuildProject performs the full build pipeline
+// BuildProject 执行完整打包流水线：生成配置 -> 图标处理 -> wails build -> 导出
 func (a *App) BuildProject(config ProjectConfig) BuildResult {
 	log := func(msg string) {
 		fmt.Fprintln(os.Stdout, msg)
@@ -400,11 +416,10 @@ func (a *App) BuildProject(config ProjectConfig) BuildResult {
 	}
 
 	log("🔨 编译中...")
-	cmd := exec.Command("wails", "build")
+	cmd := cmdWrapper.Command("wails", "build")
 	cmd.Dir = a.templateDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	err := cmd.Run()
 	if err != nil {
 		return BuildResult{false, fmt.Sprintf("编译失败: %v", err)}

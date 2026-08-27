@@ -162,7 +162,7 @@ import {ElMessage, ElMessageBox} from 'element-plus';
 import {Loading} from '@element-plus/icons-vue';
 
 // 导入 Wails 后端方法
-import {CheckEnvironment} from '../wailsjs/go/main/App.js';
+import {CheckEnvironment} from '../wailsjs/go/app/App.js';
 
 // 数据
 const checking = ref(false);
@@ -195,7 +195,7 @@ async function confirmRemove() {
     removing.value = true;
     try {
       // 导入并调用 RemoveEnvConfigs 方法
-      const {RemoveEnvConfigs} = await import('../wailsjs/go/main/App.js');
+      const {RemoveEnvConfigs} = await import('../wailsjs/go/app/App.js');
       await RemoveEnvConfigs(selectedEnvs.value);
       ElMessage.success('用户环境变量备份成功');
       showRemoveDialog.value = false;
@@ -277,7 +277,7 @@ function getNotInstalledCount() {
 async function loadBackups() {
   loadingBackups.value = true;
   try {
-    const {GetEnvBackups} = await import('../wailsjs/go/main/App.js');
+    const {GetEnvBackups} = await import('../wailsjs/go/app/App.js');
     const result = await GetEnvBackups({});
     backups.value = result.backups || [];
   } catch (error) {
@@ -303,7 +303,7 @@ async function restoreBackup(backup) {
 
     restoring.value = true;
     try {
-      const {RestoreEnvBackup} = await import('../wailsjs/go/main/App.js');
+      const {RestoreEnvBackup} = await import('../wailsjs/go/app/App.js');
       await RestoreEnvBackup({backupFile: backup.path});
 
       ElMessage.success('环境变量恢复成功,请重启应用使更改生效');

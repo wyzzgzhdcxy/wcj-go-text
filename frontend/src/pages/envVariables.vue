@@ -256,7 +256,7 @@ import {
   DeleteSystemEnvVar,
   GetPathInfo,
   OpenEnvironmentEditor
-} from '../wailsjs/go/main/App.js';
+} from '../wailsjs/go/app/App.js';
 
 // 数据
 const activeTab = ref('user');

@@ -80,7 +80,7 @@ table {
 
 <script>
 import MyTable from "./component/myTable.vue";
-import {GetTableData, GetTableNames, ReadDemoFile, TplReplace} from "../wailsjs/go/main/App.js";
+import {GetTableData, GetTableNames, ReadDemoFile, TplReplace} from "../wailsjs/go/app/App.js";
 
 export default {
   components: {MyTable},

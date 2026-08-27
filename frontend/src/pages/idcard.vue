@@ -26,7 +26,7 @@
 
 <script>
 
-import {GenIdNo, ParseIdNo, GenerateBankCardNo, ParseBankCard, IpParse} from "../wailsjs/go/main/App.js";
+import {GenIdNo, ParseIdNo, GenerateBankCardNo, ParseBankCard, IpParse} from "../wailsjs/go/app/App.js";
 
 export default {
   data() {

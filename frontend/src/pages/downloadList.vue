@@ -358,7 +358,7 @@ import {
   BilibiliDownload,
   GetYtDlpDownloadPath,
   SelectDirectory,
-} from "../wailsjs/go/main/App.js";
+} from "../wailsjs/go/app/App.js";
 import { ElMessage } from "element-plus";
 import { Plus } from "@element-plus/icons-vue";
 

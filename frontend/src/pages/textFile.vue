@@ -40,7 +40,7 @@
 </template>
 
 <script>
-import { CopyToClipboard, FileEncode, SelectFile } from "../wailsjs/go/main/App.js";
+import { CopyToClipboard, FileEncode, SelectFile } from "../wailsjs/go/app/App.js";
 import { ElNotification } from "element-plus";
 
 export default {

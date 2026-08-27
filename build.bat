@@ -5,7 +5,7 @@ REM 注入构建时间到 main.BuildTime，然后执行 wails build
 for /f "usebackq delims=" %%I in (`powershell -NoProfile -Command "Get-Date -Format 'yyyy-MM-ddTHH:mm:ss'"`) do set BUILD_TIME=%%I
 
 echo [build] BuildTime = %BUILD_TIME%
-wails build -ldflags "-X main.BuildTime=%BUILD_TIME%"
+wails build -ldflags "-X wcj-go-text/app.BuildTime=%BUILD_TIME%"
 if errorlevel 1 (
     echo [build] wails build failed, aborting.
     exit /b 1

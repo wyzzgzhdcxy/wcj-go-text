@@ -197,7 +197,7 @@ button:disabled {
 </style>
 
 <script>
-import {Compare, ReadAssetFile, ReadDemoFile} from "../wailsjs/go/main/App.js";
+import {Compare, ReadAssetFile, ReadDemoFile} from "../wailsjs/go/app/App.js";
 
 export default {
   data() {

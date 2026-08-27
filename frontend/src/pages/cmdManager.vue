@@ -102,7 +102,7 @@ import {
   UpdateCmdCommand,
   DeleteCmdCommand,
   ExecuteCmdCommand
-} from "../wailsjs/go/main/App.js";
+} from "../wailsjs/go/app/App.js";
 import {ElMessage} from "element-plus";
 
 export default {

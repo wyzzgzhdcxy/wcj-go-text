@@ -9,15 +9,15 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/wyzzgzhdcxy/wcj-go-common/core"
+
+	"wcj-go-text/golang/cmdWrapper"
 )
 
 // BatchExtractAudioReq 批量提取音频请求
@@ -150,13 +150,13 @@ func BatchExtractAudio(req BatchExtractAudioReq, callback func([]byte)) BatchExt
 			var execCmd *exec.Cmd
 			switch format {
 			case "wav":
-				execCmd = exec.Command("ffmpeg", "-i", path, "-vn", "-acodec", "pcm_s16le", "-y", outputPath)
+				execCmd = cmdWrapper.Command("ffmpeg", "-i", path, "-vn", "-acodec", "pcm_s16le", "-y", outputPath)
 			case "aac":
-				execCmd = exec.Command("ffmpeg", "-i", path, "-vn", "-acodec", "copy", "-y", outputPath)
+				execCmd = cmdWrapper.Command("ffmpeg", "-i", path, "-vn", "-acodec", "copy", "-y", outputPath)
 			case "flac":
-				execCmd = exec.Command("ffmpeg", "-i", path, "-vn", "-acodec", "flac", "-y", outputPath)
+				execCmd = cmdWrapper.Command("ffmpeg", "-i", path, "-vn", "-acodec", "flac", "-y", outputPath)
 			default: // mp3
-				execCmd = exec.Command("ffmpeg", "-i", path, "-vn", "-acodec", "libmp3lame", "-q:a", "2", "-y", outputPath)
+				execCmd = cmdWrapper.Command("ffmpeg", "-i", path, "-vn", "-acodec", "libmp3lame", "-q:a", "2", "-y", outputPath)
 			}
 
 			// 记录完整命令行
@@ -166,9 +166,6 @@ func BatchExtractAudio(req BatchExtractAudioReq, callback func([]byte)) BatchExt
 			}
 			callback([]byte("执行命令: " + cmdStr))
 
-			if runtime.GOOS == "windows" {
-				execCmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-			}
 
 			execCmd.Stdout = os.Stdout
 			execCmd.Stderr = os.Stderr
@@ -296,13 +293,13 @@ func BatchExtractAudioByFiles(req BatchExtractAudioByFilesReq, callback func([]b
 			var execCmd *exec.Cmd
 			switch format {
 			case "wav":
-				execCmd = exec.Command("ffmpeg", "-i", path, "-vn", "-acodec", "pcm_s16le", "-y", outputPath)
+				execCmd = cmdWrapper.Command("ffmpeg", "-i", path, "-vn", "-acodec", "pcm_s16le", "-y", outputPath)
 			case "aac":
-				execCmd = exec.Command("ffmpeg", "-i", path, "-vn", "-acodec", "copy", "-y", outputPath)
+				execCmd = cmdWrapper.Command("ffmpeg", "-i", path, "-vn", "-acodec", "copy", "-y", outputPath)
 			case "flac":
-				execCmd = exec.Command("ffmpeg", "-i", path, "-vn", "-acodec", "flac", "-y", outputPath)
+				execCmd = cmdWrapper.Command("ffmpeg", "-i", path, "-vn", "-acodec", "flac", "-y", outputPath)
 			default: // mp3
-				execCmd = exec.Command("ffmpeg", "-i", path, "-vn", "-acodec", "libmp3lame", "-q:a", "2", "-y", outputPath)
+				execCmd = cmdWrapper.Command("ffmpeg", "-i", path, "-vn", "-acodec", "libmp3lame", "-q:a", "2", "-y", outputPath)
 			}
 
 			// 记录完整命令行
@@ -312,9 +309,6 @@ func BatchExtractAudioByFiles(req BatchExtractAudioByFilesReq, callback func([]b
 			}
 			callback([]byte("执行命令: " + cmdStr))
 
-			if runtime.GOOS == "windows" {
-				execCmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-			}
 
 			execCmd.Stdout = os.Stdout
 			execCmd.Stderr = os.Stderr
@@ -434,11 +428,11 @@ func RotateVideo(req RotateVideoReq, callback func([]byte)) RotateVideoRes {
 		displayRotation := clockwiseDegreesToDisplayRotation(rotateDegree)
 
 		// 快速旋转：只修改显示矩阵metadata，不重新编码
-		execCmd = exec.Command("ffmpeg", "-display_rotation:v:0", strconv.Itoa(displayRotation), "-i", filePath, "-map", "0", "-c", "copy", "-y", outputPath)
+		execCmd = cmdWrapper.Command("ffmpeg", "-display_rotation:v:0", strconv.Itoa(displayRotation), "-i", filePath, "-map", "0", "-c", "copy", "-y", outputPath)
 		rotateDegree = displayRotation
 	} else {
 		// 普通旋转：重新编码
-		execCmd = exec.Command("ffmpeg", "-i", filePath, "-vf", vfFilter, "-c:a", "copy", "-y", outputPath)
+		execCmd = cmdWrapper.Command("ffmpeg", "-i", filePath, "-vf", vfFilter, "-c:a", "copy", "-y", outputPath)
 	}
 
 	// 记录完整命令行
@@ -448,9 +442,6 @@ func RotateVideo(req RotateVideoReq, callback func([]byte)) RotateVideoRes {
 	}
 	callback([]byte("执行命令: " + cmdStr))
 
-	if runtime.GOOS == "windows" {
-		execCmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	}
 	execCmd.Stdout = os.Stdout
 	execCmd.Stderr = os.Stderr
 
@@ -518,16 +509,13 @@ func isFastRotateExtSupported(ext string) bool {
 }
 
 func verifyVideoRotateMetadata(filePath string, expected int) (bool, string) {
-	cmd := exec.Command("ffprobe",
+	cmd := cmdWrapper.Command("ffprobe",
 		"-v", "error",
 		"-select_streams", "v:0",
 		"-show_streams",
 		"-of", "json",
 		filePath)
 
-	if runtime.GOOS == "windows" {
-		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	}
 
 	output, err := cmd.Output()
 	if err != nil {
@@ -646,7 +634,7 @@ func ExtractFramesByFiles(req ExtractFramesByFilesReq, callback func([]byte)) Ex
 		for j, ts := range timestamps {
 			framePath := filepath.Join(frameDir, fmt.Sprintf("%s_%03d.jpg", frameBaseName, j+1))
 
-			cmd := exec.Command("ffmpeg",
+			cmd := cmdWrapper.Command("ffmpeg",
 				"-ss", fmt.Sprintf("%.3f", ts),
 				"-i", filePath,
 				"-vf", "select=eq(pict_type\\,I)",
@@ -656,9 +644,6 @@ func ExtractFramesByFiles(req ExtractFramesByFilesReq, callback func([]byte)) Ex
 				"-y",
 				framePath)
 
-			if runtime.GOOS == "windows" {
-				cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-			}
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 
@@ -738,13 +723,13 @@ func ExtractAudio(req ExtractAudioReq, callback func([]byte)) ExtractAudioRes {
 	var execCmd *exec.Cmd
 	switch format {
 	case "wav":
-		execCmd = exec.Command("ffmpeg", "-i", req.FilePath, "-vn", "-acodec", "pcm_s16le", "-y", outputPath)
+		execCmd = cmdWrapper.Command("ffmpeg", "-i", req.FilePath, "-vn", "-acodec", "pcm_s16le", "-y", outputPath)
 	case "aac":
-		execCmd = exec.Command("ffmpeg", "-i", req.FilePath, "-vn", "-acodec", "copy", "-y", outputPath)
+		execCmd = cmdWrapper.Command("ffmpeg", "-i", req.FilePath, "-vn", "-acodec", "copy", "-y", outputPath)
 	case "flac":
-		execCmd = exec.Command("ffmpeg", "-i", req.FilePath, "-vn", "-acodec", "flac", "-y", outputPath)
+		execCmd = cmdWrapper.Command("ffmpeg", "-i", req.FilePath, "-vn", "-acodec", "flac", "-y", outputPath)
 	default: // mp3
-		execCmd = exec.Command("ffmpeg", "-i", req.FilePath, "-vn", "-acodec", "libmp3lame", "-q:a", "2", "-y", outputPath)
+		execCmd = cmdWrapper.Command("ffmpeg", "-i", req.FilePath, "-vn", "-acodec", "libmp3lame", "-q:a", "2", "-y", outputPath)
 	}
 
 	// 记录完整命令行
@@ -755,9 +740,6 @@ func ExtractAudio(req ExtractAudioReq, callback func([]byte)) ExtractAudioRes {
 	callback([]byte("执行命令: " + cmdStr))
 
 	// Windows 下隐藏命令行窗口
-	if runtime.GOOS == "windows" {
-		execCmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	}
 
 	execCmd.Stdout = os.Stdout
 	execCmd.Stderr = os.Stderr
@@ -940,7 +922,7 @@ type VideoDetailInfo struct {
 
 // getVideoDetail 使用 ffprobe 获取视频的详细信息
 func getVideoDetail(filePath string) (*VideoDetailInfo, error) {
-	cmd := exec.Command("ffprobe",
+	cmd := cmdWrapper.Command("ffprobe",
 		"-v", "quiet",
 		"-print_format", "json",
 		"-show_streams",
@@ -948,9 +930,6 @@ func getVideoDetail(filePath string) (*VideoDetailInfo, error) {
 		filePath)
 
 	// Windows 下隐藏命令行窗口
-	if runtime.GOOS == "windows" {
-		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	}
 
 	output, err := cmd.Output()
 	if err != nil {
@@ -1089,7 +1068,7 @@ func ExtractFrames(req ExtractFramesReq, callback func([]byte)) ExtractFramesRes
 		framePath := filepath.Join(outputDir, fmt.Sprintf("frame_%03d.jpg", i+1))
 
 		// 使用 ffmpeg 抽取单帧
-		cmd := exec.Command("ffmpeg",
+		cmd := cmdWrapper.Command("ffmpeg",
 			"-ss", fmt.Sprintf("%.3f", ts),
 			"-i", req.FilePath,
 			"-vf", "select=eq(pict_type\\,I)", // 视频过滤器：只选择帧类型为I的帧
@@ -1100,9 +1079,6 @@ func ExtractFrames(req ExtractFramesReq, callback func([]byte)) ExtractFramesRes
 			framePath)
 
 		// Windows 下隐藏命令行窗口
-		if runtime.GOOS == "windows" {
-			cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-		}
 
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -1142,16 +1118,13 @@ func ExtractFrames(req ExtractFramesReq, callback func([]byte)) ExtractFramesRes
 
 // getVideoDuration 使用 ffprobe 获取视频时长（秒）
 func getVideoDuration(filePath string) (float64, error) {
-	cmd := exec.Command("ffprobe",
+	cmd := cmdWrapper.Command("ffprobe",
 		"-v", "quiet",
 		"-print_format", "json",
 		"-show_format",
 		filePath)
 
 	// Windows 下隐藏命令行窗口
-	if runtime.GOOS == "windows" {
-		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	}
 
 	output, err := cmd.Output()
 	if err != nil {
@@ -1285,7 +1258,7 @@ func ExtractVideoThumbnail(req ExtractVideoThumbnailReq) ExtractVideoThumbnailRe
 	defer os.Remove(thumbnailPath)
 
 	// 使用 ffmpeg 提取单帧
-	cmd := exec.Command("ffmpeg",
+	cmd := cmdWrapper.Command("ffmpeg",
 		"-ss", fmt.Sprintf("%.3f", timestamp),
 		"-i", req.FilePath,
 		"-vframes", "1",
@@ -1294,9 +1267,6 @@ func ExtractVideoThumbnail(req ExtractVideoThumbnailReq) ExtractVideoThumbnailRe
 		thumbnailPath)
 
 	// Windows 下隐藏命令行窗口
-	if runtime.GOOS == "windows" {
-		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	}
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -1384,7 +1354,7 @@ func TrimVideoStart(req TrimVideoStartReq, callback func([]byte)) TrimVideoStart
 	outputPath := fmt.Sprintf("%s_cut%s", basePath, ext)
 
 	// 无损切割：-ss 放在 -i 之前会自动从最近关键帧开始，-avoid_negative_ts 处理时间戳
-	execCmd := exec.Command("ffmpeg",
+	execCmd := cmdWrapper.Command("ffmpeg",
 		"-ss", fmt.Sprintf("%.3f", req.Duration),
 		"-i", filePath,
 		"-c", "copy",
@@ -1399,9 +1369,6 @@ func TrimVideoStart(req TrimVideoStartReq, callback func([]byte)) TrimVideoStart
 	}
 	callback([]byte("执行命令: " + cmdStr))
 
-	if runtime.GOOS == "windows" {
-		execCmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	}
 	execCmd.Stdout = os.Stdout
 	execCmd.Stderr = os.Stderr
 
@@ -1492,7 +1459,7 @@ func TrimVideoEnd(req TrimVideoEndReq, callback func([]byte)) TrimVideoEndRes {
 	outputPath := fmt.Sprintf("%s_cut%s", basePath, ext)
 
 	// 无损切割：使用 -c copy 直接复制流，不重新编码
-	execCmd := exec.Command("ffmpeg",
+	execCmd := cmdWrapper.Command("ffmpeg",
 		"-i", filePath,
 		"-t", fmt.Sprintf("%.3f", newDuration),
 		"-c", "copy",
@@ -1506,9 +1473,6 @@ func TrimVideoEnd(req TrimVideoEndReq, callback func([]byte)) TrimVideoEndRes {
 	}
 	callback([]byte("执行命令: " + cmdStr))
 
-	if runtime.GOOS == "windows" {
-		execCmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	}
 	execCmd.Stdout = os.Stdout
 	execCmd.Stderr = os.Stderr
 
@@ -1638,7 +1602,7 @@ func TrimVideoEndByFiles(req TrimVideoEndByFilesReq, callback func([]byte)) Trim
 			outputPath := fmt.Sprintf("%s_cut%s", basePath, ext)
 
 			// 无损切割
-			execCmd := exec.Command("ffmpeg",
+			execCmd := cmdWrapper.Command("ffmpeg",
 				"-i", filePath,
 				"-t", fmt.Sprintf("%.3f", newDuration),
 				"-c", "copy",
@@ -1652,9 +1616,6 @@ func TrimVideoEndByFiles(req TrimVideoEndByFilesReq, callback func([]byte)) Trim
 			}
 			callback([]byte("执行命令: " + cmdStr))
 
-			if runtime.GOOS == "windows" {
-				execCmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-			}
 			execCmd.Stdout = os.Stdout
 			execCmd.Stderr = os.Stderr
 
@@ -1785,7 +1746,7 @@ func TrimVideoStartByFiles(req TrimVideoStartByFilesReq, callback func([]byte)) 
 			outputPath := fmt.Sprintf("%s_cut%s", basePath, ext)
 
 			// 无损切割：-ss 放在 -i 之前会自动从最近关键帧开始
-			execCmd := exec.Command("ffmpeg",
+			execCmd := cmdWrapper.Command("ffmpeg",
 				"-ss", fmt.Sprintf("%.3f", req.Duration),
 				"-i", filePath,
 				"-c", "copy",
@@ -1800,9 +1761,6 @@ func TrimVideoStartByFiles(req TrimVideoStartByFilesReq, callback func([]byte)) 
 			}
 			callback([]byte("执行命令: " + cmdStr))
 
-			if runtime.GOOS == "windows" {
-				execCmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-			}
 			execCmd.Stdout = os.Stdout
 			execCmd.Stderr = os.Stderr
 
@@ -2081,7 +2039,7 @@ func mergeSingleDir(dirPath string, ignoreSort bool, callback func([]byte)) (boo
 	callback([]byte(fmt.Sprintf("执行命令: %s", ffmpegCmd)))
 
 	// 执行 ffmpeg 合并
-	cmd := exec.Command("ffmpeg",
+	cmd := cmdWrapper.Command("ffmpeg",
 		"-f", "concat",
 		"-safe", "0",
 		"-i", listFilePath,
@@ -2089,9 +2047,6 @@ func mergeSingleDir(dirPath string, ignoreSort bool, callback func([]byte)) (boo
 		"-y",
 		outputPath)
 
-	if runtime.GOOS == "windows" {
-		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -2166,7 +2121,7 @@ func MergeVideosByFiles(req MergeVideosByFilesReq, callback func([]byte)) MergeV
 	callback([]byte(fmt.Sprintf("执行命令: %s", ffmpegCmd)))
 
 	// 执行 ffmpeg 合并
-	cmd := exec.Command("ffmpeg",
+	cmd := cmdWrapper.Command("ffmpeg",
 		"-f", "concat",
 		"-safe", "0",
 		"-i", listFilePath,
@@ -2174,9 +2129,6 @@ func MergeVideosByFiles(req MergeVideosByFilesReq, callback func([]byte)) MergeV
 		"-y",
 		outputPath)
 
-	if runtime.GOOS == "windows" {
-		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -2241,7 +2193,7 @@ func GetKeyframes(req GetKeyframesReq, callback func([]byte)) GetKeyframesRes {
 
 	filePath := filepath.Join(req.DirPath, req.FileName)
 
-	cmd := exec.Command("ffprobe",
+	cmd := cmdWrapper.Command("ffprobe",
 		"-select_streams", "v:0",
 		"-show_frames",
 		"-show_entries", "frame=pts_time,pict_type",
@@ -2249,9 +2201,6 @@ func GetKeyframes(req GetKeyframesReq, callback func([]byte)) GetKeyframesRes {
 		"-read_intervals", fmt.Sprintf("0%%%.0f", maxDuration),
 		filePath)
 
-	if runtime.GOOS == "windows" {
-		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	}
 
 	// 输出完整命令行
 	callback([]byte("执行命令: " + strings.Join(cmd.Args, " ")))

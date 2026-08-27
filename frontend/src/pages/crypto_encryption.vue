@@ -170,7 +170,7 @@
 
 <script>
 import {Document} from '@element-plus/icons-vue'
-import {GenerateKey, OpenTmpDir, RsaCryptoStr, RsaDeCryptoStr, SelectFile} from "../wailsjs/go/main/App.js";
+import {GenerateKey, OpenTmpDir, RsaCryptoStr, RsaDeCryptoStr, SelectFile} from "../wailsjs/go/app/App.js";
 
 export default {
   components: {

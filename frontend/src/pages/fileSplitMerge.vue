@@ -147,7 +147,7 @@
 </template>
 
 <script>
-import {SplitFile, MergeFiles, SelectFile, SelectDirectory, OpenExplorer} from "../wailsjs/go/main/App.js";
+import {SplitFile, MergeFiles, SelectFile, SelectDirectory, OpenExplorer} from "../wailsjs/go/app/App.js";
 import {ElNotification} from "element-plus";
 
 export default {

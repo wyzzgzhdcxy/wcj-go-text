@@ -39,7 +39,7 @@
 
 <script>
 import trimRepeated from 'trim-repeated';
-import { CopyToClipboard } from "../wailsjs/go/main/App.js";
+import { CopyToClipboard } from "../wailsjs/go/app/App.js";
 import { ElNotification } from "element-plus";
 
 export default {

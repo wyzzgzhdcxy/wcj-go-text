@@ -372,7 +372,7 @@
 </template>
 
 <script>
-import {DownloadM3u8, SelectDirectory, OpenExplorer, OpenUrl} from "../wailsjs/go/main/App.js";
+import {DownloadM3u8, SelectDirectory, OpenExplorer, OpenUrl} from "../wailsjs/go/app/App.js";
 import {EventsOn, EventsOff} from "../wailsjs/runtime/runtime.js";
 import {ElMessage, ElMessageBox} from "element-plus";
 import {Setting, Plus} from "@element-plus/icons-vue";

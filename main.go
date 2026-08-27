@@ -3,38 +3,43 @@ package main
 import (
 	"embed"
 
+	"wcj-go-text/app"
+
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 )
 
 //go:embed all:frontend/dist
-var assets embed.FS
+var frontendDist embed.FS
 
-// init 引用 BuildTime，防止链接器 dead-code 优化丢弃 -X 注入的值。
-// （通过 runtime.SetFinalizer 引用，使符号必须保留）
+//go:embed all:tpl
+var tplDist embed.FS
+
+// init 注入嵌入式资源到 app 包，并保留 BuildTime 符号。
 func init() {
-	runtimeSetFinalizerForBuildTime()
-	assetsFS = assets
+	app.Assets = frontendDist
+	app.TplFS = tplDist
+	app.KeepBuildTimeAlive()
 }
 
 func main() {
-	app := NewApp()
+	a := app.NewApp()
 
 	err := wails.Run(&options.App{
 		Title:  "文本工具箱",
 		Width:  1180,
 		Height: 860,
 		AssetServer: &assetserver.Options{
-			Assets: assets,
+			Assets: frontendDist,
 		},
 		SingleInstanceLock: &options.SingleInstanceLock{
 			UniqueId:               "wcj-go-text-e3f2a1b4-8c9d-4e5f-a6b7",
-			OnSecondInstanceLaunch: app.onSecondInstanceLaunch,
+			OnSecondInstanceLaunch: a.OnSecondInstanceLaunch,
 		},
-		OnStartup: app.startup,
+		OnStartup: a.Startup,
 		Bind: []interface{}{
-			app,
+			a,
 		},
 	})
 

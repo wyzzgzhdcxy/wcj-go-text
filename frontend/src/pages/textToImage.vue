@@ -309,7 +309,7 @@
 </template>
 
 <script>
-import {GenerateImage, SaveImagePrompt, GetImagePrompts, OpenImageFolder, GetImageDataUrl, SelectFile} from "../wailsjs/go/main/App.js";
+import {GenerateImage, SaveImagePrompt, GetImagePrompts, OpenImageFolder, GetImageDataUrl, SelectFile} from "../wailsjs/go/app/App.js";
 
 export default {
   name: 'TextToImage',

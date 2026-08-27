@@ -208,7 +208,7 @@ import {
   DataAnalysis, ScaleToOriginal, PriceTag, Iphone, Avatar, Postcard,
   Menu, Fold, Expand,
 } from '@element-plus/icons-vue';
-import { GetBuildTime } from './wailsjs/go/main/App.js';
+import { GetBuildTime } from './wailsjs/go/app/App.js';
 
 export default {
   name: 'App',

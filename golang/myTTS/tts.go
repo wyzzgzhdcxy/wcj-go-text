@@ -18,6 +18,8 @@ import (
 	"time"
 
 	"github.com/wyzzgzhdcxy/wcj-go-common/core"
+
+	"wcj-go-text/golang/cmdWrapper"
 )
 
 // MiniMax TTS API 相关结构
@@ -378,11 +380,11 @@ func OpenAudioFolder() string {
 		var cmd *exec.Cmd
 		switch runtime.GOOS {
 		case "windows":
-			cmd = exec.Command("explorer", ttsDir)
+			cmd = cmdWrapper.Command("explorer", ttsDir)
 		case "darwin":
-			cmd = exec.Command("open", ttsDir)
+			cmd = cmdWrapper.Command("open", ttsDir)
 		case "linux":
-			cmd = exec.Command("xdg-open", ttsDir)
+			cmd = cmdWrapper.Command("xdg-open", ttsDir)
 		}
 		if cmd != nil {
 			cmd.Start()
@@ -698,7 +700,7 @@ func TextToSpeechLocal(req TextToSpeechLocalReq) TextToSpeechLocalRes {
 
 	// edge-tts 命令
 	// 格式: edge-tts --text "文本" --voice "音色" --write-media "输出路径"
-	cmd := exec.Command("edge-tts",
+	cmd := cmdWrapper.Command("edge-tts",
 		"--text", req.Text,
 		"--voice", voice,
 		"--write-media", outputPath)

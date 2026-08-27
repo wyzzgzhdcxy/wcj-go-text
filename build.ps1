@@ -3,4 +3,4 @@
 
 $timestamp = Get-Date -Format "yyyy-MM-ddTHH:mm:ss"
 Write-Host "[build] BuildTime = $timestamp"
-wails build -ldflags "-X main.BuildTime=$timestamp"
+wails build -ldflags "-X wcj-go-text/app.BuildTime=$timestamp"

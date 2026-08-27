@@ -2,7 +2,6 @@ package cmdWrapper
 
 import (
 	"fmt"
-	"os/exec"
 	rt "runtime"
 	"strings"
 )
@@ -13,7 +12,7 @@ func OpenRegistryStartup() error {
 	switch rt.GOOS {
 	case "windows":
 		// 使用 regjump 打开注册表并定位到指定项
-		cmd := exec.Command("regjump", `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run`)
+		cmd := Command("regjump", `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run`)
 		cmd.Stdout = nil
 		cmd.Stderr = nil
 
@@ -51,7 +50,7 @@ func OpenExplorer(path string) error {
 }
 
 func execCommand(cmdstr, args string) error {
-	cmd := exec.Command(cmdstr, args)
+	cmd := Command(cmdstr, args)
 	// 不设置任何输出
 	cmd.Stdout = nil
 	cmd.Stderr = nil

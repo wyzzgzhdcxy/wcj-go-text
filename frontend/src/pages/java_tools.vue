@@ -51,7 +51,7 @@ table {
 
 
 <script>
-import {GenGoCodeByJsonStr, JavaCodeToJson, ReadDemoFile} from "../wailsjs/go/main/App.js";
+import {GenGoCodeByJsonStr, JavaCodeToJson, ReadDemoFile} from "../wailsjs/go/app/App.js";
 import {w} from "./js/fun.js";
 
 

@@ -533,8 +533,8 @@
 </template>
 
 <script>
-import {SelectDirectory, OpenExplorer, GetDirContents} from "../wailsjs/go/main/App.js";
-import {BatchExtractAudioByFiles, MergeVideos, MergeVideosByFiles, ClassifyVideosByResolution} from "../wailsjs/go/main/App.js";
+import {SelectDirectory, OpenExplorer, GetDirContents} from "../wailsjs/go/app/App.js";
+import {BatchExtractAudioByFiles, MergeVideos, MergeVideosByFiles, ClassifyVideosByResolution} from "../wailsjs/go/app/App.js";
 
 export default {
   name: 'batchExtractAudio',

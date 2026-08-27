@@ -169,7 +169,7 @@
 
 
 <script>
-import {AnalyzeFolders, BackUp, ModifyOriDir, RestoreFiles} from "../wailsjs/go/main/App.js";
+import {AnalyzeFolders, BackUp, ModifyOriDir, RestoreFiles} from "../wailsjs/go/app/App.js";
 import '@fortawesome/fontawesome-free/css/all.css'
 import {ElNotification} from "element-plus";
 

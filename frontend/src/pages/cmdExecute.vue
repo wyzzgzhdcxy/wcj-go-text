@@ -67,7 +67,7 @@ table {
 </template>
 
 <script>
-import {BackUpEnvFiles, CpuZ, OpenRegistryStartup, RestoreEnvFiles, StartEnvironment} from "../wailsjs/go/main/App.js";
+import {BackUpEnvFiles, CpuZ, OpenRegistryStartup, RestoreEnvFiles, StartEnvironment} from "../wailsjs/go/app/App.js";
 import {ElNotification} from "element-plus";
 import {DocumentCopy} from "@element-plus/icons-vue";
 

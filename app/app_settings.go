@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"database/sql"
@@ -12,8 +12,7 @@ import (
 	"github.com/wyzzgzhdcxy/wcj-go-common/core"
 )
 
-// assetsFS 持有嵌入式资源（来自 main.go），用于读取 system.config.json
-var assetsFS embed.FS
+// Assets 持有嵌入式资源（来自 main.go），用于读取 system.config.json
 
 // settingsDb 图像/emoji 设置数据库（image_tools.db）
 var settingsDb *sql.DB
@@ -232,8 +231,8 @@ func (a *App) GetConfigKey(key string) string {
 			return value
 		}
 	}
-	if assetsFS != (embed.FS{}) {
-		content, _ := assetsFS.ReadFile("config/system.config.json")
+	if Assets != (embed.FS{}) {
+		content, _ := Assets.ReadFile("config/system.config.json")
 		var myMap map[string]string
 		contentByte := []byte(content)
 		core.JsonToObject(&contentByte, &myMap)

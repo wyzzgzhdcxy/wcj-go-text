@@ -4,7 +4,7 @@ import 'element-plus/dist/index.css'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import App from './App.vue'
 import router from './pages/js/route.js'
-import {GetStartupTime, SetTitle} from './wailsjs/go/main/App.js'
+import {GetStartupTime, SetTitle} from './wailsjs/go/app/App.js'
 import './style.css';
 
 const app = createApp(App)

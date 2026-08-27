@@ -1,5 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
-import { SetTitle } from '../../wailsjs/go/main/App.js';
+import { SetTitle } from '../../wailsjs/go/app/App.js';
 
 const routes = [
     {path: '/', redirect: '/textCommonEncode'},

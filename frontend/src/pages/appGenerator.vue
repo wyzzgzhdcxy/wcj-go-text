@@ -68,7 +68,7 @@ import {
   BuildProject,
   SelectIconFile,
   SelectOutputDir,
-} from '../wailsjs/go/main/App.js';
+} from '../wailsjs/go/app/App.js';
 import { ElNotification } from 'element-plus';
 
 export default {

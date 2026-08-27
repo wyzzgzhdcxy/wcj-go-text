@@ -74,7 +74,7 @@ export default {
     // 加载菜单配置
     const loadMenu = async () => {
       try {
-        const { ReadAssetFile } = await import('../../wailsjs/go/main/App.js');
+        const { ReadAssetFile } = await import('../../wailsjs/go/app/App.js');
         const content = await ReadAssetFile('/config/menu.json');
         const items = JSON.parse(content);
 

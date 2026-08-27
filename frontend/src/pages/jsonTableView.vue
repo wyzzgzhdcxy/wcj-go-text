@@ -66,7 +66,7 @@ table {
 
 <script>
 
-import {ReadDemoFile} from "../wailsjs/go/main/App.js";
+import {ReadDemoFile} from "../wailsjs/go/app/App.js";
 
 export default {
   data() {

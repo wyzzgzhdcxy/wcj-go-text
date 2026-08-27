@@ -105,7 +105,7 @@ table {
 
 
 import {w} from "./js/fun.js";
-import {SalaryList} from "../wailsjs/go/main/App.js";
+import {SalaryList} from "../wailsjs/go/app/App.js";
 
 export default {
   data() {

@@ -12,11 +12,12 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/wyzzgzhdcxy/wcj-go-common/core"
+
+	"wcj-go-text/golang/cmdWrapper"
 )
 
 // YtDlpVideo video information from yt-dlp --dump-json
@@ -295,9 +296,8 @@ func executeDownload(url string, formatID string, outputPath string, platform st
 	log.Printf("[executeDownload] cmd: %s", fullCmd)
 	progressCallback(ProgressInfo{}, fmt.Sprintf("执行命令: %s\n", fullCmd))
 
-	cmd := exec.Command(ytdlpPath, args...)
+	cmd := cmdWrapper.Command(ytdlpPath, args...)
 	currentProcess = cmd
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
@@ -377,8 +377,7 @@ func FindYtDlp() string {
 			}
 		} else {
 			// Try to find in PATH
-			cmd := exec.Command("where", "yt-dlp")
-			cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+			cmd := cmdWrapper.Command("where", "yt-dlp")
 			output, err := cmd.Output()
 			if err == nil && len(output) > 0 {
 				lines := strings.Split(strings.TrimSpace(string(output)), "\n")
@@ -402,8 +401,7 @@ func GetVideoInfo(url string) (string, error) {
 		url,
 	}
 
-	cmd := exec.Command(ytdlpPath, args...)
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	cmd := cmdWrapper.Command(ytdlpPath, args...)
 	cmd.Stderr = os.Stderr
 
 	output, err := cmd.Output()
@@ -485,9 +483,8 @@ func DownloadVideo(url string, options YtDlpOptions, progressCallback func(Progr
 
 	args = append(args, url)
 
-	cmd := exec.Command(ytdlpPath, args...)
+	cmd := cmdWrapper.Command(ytdlpPath, args...)
 	currentProcess = cmd
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 
 	// Create a pipe to read stderr (yt-dlp outputs progress to stderr)
 	stderr, err := cmd.StderrPipe()
@@ -620,8 +617,7 @@ func ListFormats(url string) (string, error) {
 		url,
 	}
 
-	cmd := exec.Command(ytdlpPath, args...)
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	cmd := cmdWrapper.Command(ytdlpPath, args...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("failed to list formats: %v", err)
@@ -636,14 +632,12 @@ func CheckDependencies() map[string]bool {
 
 	// Check yt-dlp
 	ytdlpPath := FindYtDlp()
-	cmd := exec.Command(ytdlpPath, "--version")
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	cmd := cmdWrapper.Command(ytdlpPath, "--version")
 	err := cmd.Run()
 	result["yt-dlp"] = err == nil
 
 	// Check ffmpeg
-	ffmpegCmd := exec.Command("ffmpeg", "-version")
-	ffmpegCmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	ffmpegCmd := cmdWrapper.Command("ffmpeg", "-version")
 	err = ffmpegCmd.Run()
 	result["ffmpeg"] = err == nil
 
@@ -667,8 +661,7 @@ func GetDownloadPath() string {
 func UpdateYtDlp() (string, error) {
 	ytdlpPath := FindYtDlp()
 
-	cmd := exec.Command(ytdlpPath, "-U")
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	cmd := cmdWrapper.Command(ytdlpPath, "-U")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("update failed: %v", err)
@@ -712,8 +705,7 @@ func BilibiliListFormats(url string) (string, error) {
 		}
 	}
 
-	cmd := exec.Command(ytdlpPath, args...)
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	cmd := cmdWrapper.Command(ytdlpPath, args...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("failed to list formats: %v, output: %s", err, string(output))
@@ -770,9 +762,8 @@ func BilibiliDownload(url string, formatID string, outputPath string, progressCa
 	log.Printf("[BilibiliDownload] cmd: %s", fullCmd)
 	progressCallback(ProgressInfo{}, fmt.Sprintf("执行命令: %s\n", fullCmd))
 
-	cmd := exec.Command(ytdlpPath, args...)
+	cmd := cmdWrapper.Command(ytdlpPath, args...)
 	currentProcess = cmd
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 
 	stderr, err := cmd.StderrPipe()
 	if err != nil {

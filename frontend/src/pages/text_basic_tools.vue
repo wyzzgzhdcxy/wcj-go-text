@@ -28,7 +28,7 @@ table {
 </template>
 
 <script>
-import {TextDifference, TextIntersection, TextUnion} from "../wailsjs/go/main/App.js";
+import {TextDifference, TextIntersection, TextUnion} from "../wailsjs/go/app/App.js";
 import MyTextEditor from "./component/myTextEditor.vue";
 
 export default {
