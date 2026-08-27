@@ -1,25 +1,43 @@
 <template>
-  <div class="page-container">
-    <div class="content-wrapper">
-      <div class="textarea-wrapper">
-        <textarea v-model="inputData" class="textarea" placeholder="输入文本..."></textarea>
+  <div class="page">
+    <div class="split">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">输入 <span class="badge">{{ inputStats.lines }} 行</span></div>
+          <div class="card-actions">
+            <button class="chip" @click="clearInput">清空</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <textarea v-model="inputData" class="text-panel" placeholder="每行一段文本”"></textarea>
+        </div>
       </div>
-      <div class="button-group">
-        <el-button type="success" v-for="c in charList" :key="c" @click="addChar(c)">{{ c }}</el-button>
+
+      <div class="toolbar">
+        <span class="toolbar-label">添加</span>
+        <button class="chip" v-for="c in charList" :key="c" @click="addChar(c)">
+          <span class="icon">'</span>{{ c }}<span class="icon">'</span>
+        </button>
       </div>
-      <div class="textarea-wrapper">
-        <textarea v-model="result" class="textarea" placeholder="结果..." disabled></textarea>
-      </div>
-      <div class="copy-btn">
-        <el-button type="primary" @click="copyText">复制结果</el-button>
+
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">结果 <span class="badge">{{ resultStats.lines }} 行</span></div>
+          <div class="card-actions">
+            <button class="chip primary" :disabled="!result" @click="copyText">复制结果</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <textarea v-model="result" class="text-panel" placeholder="处理结果会显示在这里”" disabled></textarea>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import {CopyToClipboard} from "../wailsjs/go/main/App.js";
-import {ElNotification} from "element-plus";
+import { CopyToClipboard } from "../wailsjs/go/app/App.js";
+import { ElNotification } from "element-plus";
 
 export default {
   data() {
@@ -29,71 +47,24 @@ export default {
       charList: ["'", '"', '#', 'a']
     }
   },
+  computed: {
+    inputStats() { return { lines: this.inputData ? this.inputData.split('\n').length : 0 } },
+    resultStats() { return { lines: this.result ? this.result.split('\n').length : 0 } }
+  },
   methods: {
+    clearInput() { this.inputData = ''; this.result = ''; },
     async copyText() {
+      if (!this.result) return;
       await CopyToClipboard(this.result);
-      ElNotification({title: '成功', message: "已复制到剪贴板", position: 'bottom-right', type: 'success'});
+      ElNotification({ title: '已复制', message: '结果已复制到剪贴板', position: 'bottom-right', type: 'success' });
     },
     addChar(c) {
-      if (this.inputData === "") {
-        ElNotification({title: '数据为空', message: "输入数据为空", position: 'bottom-right', type: 'error'});
+      if (!this.inputData) {
+        ElNotification({ title: '数据为空', message: '请先输入文本', position: 'bottom-right', type: 'error' });
         return;
       }
-      let arr = this.inputData.split('\n')
-      this.result = arr.map(item => c + item + c).join('\n');
+      this.result = this.inputData.split('\n').map(item => c + item + c).join('\n');
     }
   }
 }
 </script>
-
-<style scoped>
-.page-container {
-  height: 100%;
-  padding: 0px;
-  display: flex;
-  flex-direction: column;
-}
-
-.content-wrapper {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  position: relative;
-}
-
-.textarea-wrapper {
-  flex: 1;
-  min-height: 0;
-}
-
-.textarea {
-  width: 100%;
-  height: 100%;
-  padding: 12px;
-  border-radius: 4px;
-  border: 1px solid #dcdfe6;
-  resize: none;
-  font-family: monospace;
-  font-size: 14px;
-  box-sizing: border-box;
-}
-
-.textarea:focus {
-  outline: none;
-  border-color: #409EFF;
-}
-
-.button-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding-left: 10px;
-}
-
-.copy-btn {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-}
-</style>
