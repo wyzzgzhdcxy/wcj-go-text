@@ -13,7 +13,7 @@ export default defineConfig({
     include: ['vue', 'vue-router', 'element-plus', '@element-plus/icons-vue']
   },
   build: {
-    minify: 'esbuild',
+    minify: 'oxc',
     target: 'es2020',
     cssCodeSplit: true
   }
