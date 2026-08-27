@@ -68,6 +68,15 @@ func Command(name string, args ...string) *exec.Cmd {
 	return cmd
 }
 
+// CommandVisible 返回一个不强制隐藏窗口的 *exec.Cmd。
+// 用于 explorer、cmd /c start 等需要显示窗口（资源管理器/浏览器）的场景。
+// 隐藏窗口会导致这些 GUI 子进程静默退出而不弹出窗口。
+func CommandVisible(name string, args ...string) *exec.Cmd {
+	cmd := exec.Command(name, args...)
+	applySysProcAttrVisible(cmd)
+	return cmd
+}
+
 func applySysProcAttr(cmd *exec.Cmd) {
 	if runtime.GOOS != "windows" {
 		return
@@ -77,6 +86,17 @@ func applySysProcAttr(cmd *exec.Cmd) {
 		return
 	}
 	cmd.SysProcAttr.HideWindow = true
+}
+
+func applySysProcAttrVisible(cmd *exec.Cmd) {
+	if runtime.GOOS != "windows" {
+		return
+	}
+	if cmd.SysProcAttr == nil {
+		cmd.SysProcAttr = &syscall.SysProcAttr{}
+		return
+	}
+	cmd.SysProcAttr.HideWindow = false
 }
 
 // createCommand creates an exec.Cmd with the given options

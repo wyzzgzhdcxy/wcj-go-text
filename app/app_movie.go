@@ -43,7 +43,7 @@ func (a *App) OpenExplorer(path string) {
 		path, _ = os.Getwd()
 	}
 	path = filepath.FromSlash(path)
-	cmdWrapper.Command("explorer", path).Start()
+	cmdWrapper.CommandVisible("explorer", path).Start()
 }
 
 func (a *App) GetTempDir() string {
@@ -305,8 +305,13 @@ func (a *App) SendToFrontend(message string) {
 // ---------------- 浏览器 ----------------
 
 func (a *App) OpenUrl(openURL string) error {
-	cmd := cmdWrapper.Command("cmd", "/c", "start", openURL)
-	return cmd.Run()
+	cmd := cmdWrapper.CommandVisible("cmd", "/c", "start", "", openURL)
+	return cmd.Start()
+}
+
+func (a *App) OpenBrowser(openURL string) error {
+	cmd := cmdWrapper.CommandVisible("rundll32", "url.dll,FileProtocolHandler", openURL)
+	return cmd.Start()
 }
 
 // ---------------- 音乐搜索 ----------------
