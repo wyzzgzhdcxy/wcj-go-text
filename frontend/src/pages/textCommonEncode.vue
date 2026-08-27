@@ -5,7 +5,9 @@
         <div class="card-head">
           <div class="card-title">输入 <span class="badge">{{ inputStats.chars }} 字符 · {{ inputStats.lines }} 行</span></div>
           <div class="card-actions">
-            <button class="chip" @click="clearInput">清空</button>
+            <button class="chip icon-only" @click="clearInput" title="清空">
+              <el-icon><Delete /></el-icon>
+            </button>
           </div>
         </div>
         <div class="card-body">
@@ -13,23 +15,57 @@
         </div>
       </div>
 
-      <div class="toolbar">
-        <span class="toolbar-label">操作</span>
-        <button class="chip" @click="run('转json')"><span class="icon">{}</span>转JSON</button>
-        <button class="chip" @click="run('全部大写')"><span class="icon">Aa</span>全大写</button>
-        <button class="chip" @click="run('全部小写')"><span class="icon">aa</span>全小写</button>
-        <button class="chip" @click="run('删除重复行')"><span class="icon">⊟</span>去重</button>
-        <button class="chip" @click="run('删除空行')"><span class="icon">∕</span>去空行</button>
-        <button class="chip" @click="run('去除不可见字符')"><span class="icon">⎕</span>去不可见</button>
-        <button class="chip" @click="run('下划线转驼峰')"><span class="icon">→</span>下划线转驼峰</button>
+      <div class="toolbar-group">
+        <div class="toolbar">
+          <span class="toolbar-label">分组</span>
+          <button class="chip" :class="{ primary: group === 'common' }" @click="group = 'common'">常用</button>
+          <button class="chip" :class="{ primary: group === 'hash' }" @click="group = 'hash'">哈希</button>
+          <button class="chip" :class="{ primary: group === 'encode' }" @click="group = 'encode'">编码</button>
+        </div>
+
+        <div class="toolbar">
+          <span class="toolbar-label">操作</span>
+
+        <template v-if="group === 'common'">
+          <button class="chip" @click="run('转json')"><span class="icon">{}</span>转JSON</button>
+          <button class="chip" @click="run('全部大写')"><span class="icon">Aa</span>全大写</button>
+          <button class="chip" @click="run('全部小写')"><span class="icon">aa</span>全小写</button>
+          <button class="chip" @click="run('删除重复行')"><span class="icon">⊟</span>去重</button>
+          <button class="chip" @click="run('删除空行')"><span class="icon">∕</span>去空行</button>
+          <button class="chip" @click="run('去除不可见字符')"><span class="icon">⎕</span>去不可见</button>
+          <button class="chip" @click="run('下划线转驼峰')"><span class="icon">→</span>下划线转驼峰</button>
+        </template>
+
+        <template v-else-if="group === 'hash'">
+          <button class="chip" @click="run('md5')">MD5 摘要</button>
+          <button class="chip" @click="run('sha1')">SHA1</button>
+          <button class="chip" @click="run('sha256')">SHA256</button>
+          <button class="chip" @click="run('sha512')">SHA512</button>
+        </template>
+
+        <template v-else>
+          <button class="chip" @click="run('url编码')">URL 编码</button>
+          <button class="chip" @click="run('url解码')">URL 解码</button>
+          <button class="chip" @click="run('base64编码')">Base64 编码</button>
+          <button class="chip" @click="run('base64解码')">Base64 解码</button>
+          <button class="chip" @click="run('hex编码')">HEX 编码</button>
+          <button class="chip" @click="run('hex解码')">HEX 解码</button>
+          <button class="chip" @click="run('ascii编码')">ASCII 编码</button>
+          <button class="chip" @click="run('ascii解码')">ASCII 解码</button>
+        </template>
+        </div>
       </div>
 
       <div class="card">
         <div class="card-head">
           <div class="card-title">结果 <span class="badge">{{ resultStats.chars }} 字符 · {{ resultStats.lines }} 行</span></div>
           <div class="card-actions">
-            <button class="chip" :disabled="!result" @click="swap">→输入</button>
-            <button class="chip primary" :disabled="!result" @click="copyText">复制结果</button>
+            <button class="chip icon-only" :disabled="!result" @click="swap" title="→输入">
+              <el-icon><Sort /></el-icon>
+            </button>
+            <button class="chip primary icon-only" :disabled="!result" @click="copyText" title="复制结果">
+              <el-icon><DocumentCopy /></el-icon>
+            </button>
           </div>
         </div>
         <div class="card-body">
@@ -41,12 +77,15 @@
 </template>
 
 <script>
-import { CopyToClipboard } from "../wailsjs/go/app/App.js";
+import { CopyToClipboard, TextEncode } from "../wailsjs/go/app/App.js";
 import { ElNotification } from "element-plus";
+import { Delete, Sort, DocumentCopy } from "@element-plus/icons-vue";
 
 export default {
+  components: { Delete, Sort, DocumentCopy },
   data() {
     return {
+      group: 'common',
       inputData: '11111111\n22222222\n33333333333',
       result: ''
     }
@@ -74,7 +113,7 @@ export default {
       await CopyToClipboard(this.result);
       ElNotification({ title: '已复制', message: '结果已复制到剪贴板', position: 'bottom-right', type: 'success' });
     },
-    run(val) {
+    async run(val) {
       if (!this.inputData) {
         ElNotification({ title: '数据为空', message: '请先输入文本', position: 'bottom-right', type: 'error' });
         return;
@@ -82,22 +121,64 @@ export default {
       if (val === '转json') {
         const arr = this.inputData.split('\n');
         this.result = JSON.stringify(arr, null, 4);
-      } else if (val === '全部大写') {
+        return;
+      }
+      if (val === '全部大写') {
         this.result = this.inputData.toUpperCase();
-      } else if (val === '全部小写') {
+        return;
+      }
+      if (val === '全部小写') {
         this.result = this.inputData.toLowerCase();
-      } else if (val === '删除重复行') {
+        return;
+      }
+      if (val === '删除重复行') {
         this.result = [...new Set(this.inputData.split('\n'))].join('\n');
-      } else if (val === '删除空行') {
+        return;
+      }
+      if (val === '删除空行') {
         this.result = this.inputData.replace(/\n\n+/g, '\n');
-      } else if (val === '去除不可见字符') {
+        return;
+      }
+      if (val === '去除不可见字符') {
         this.result = this.inputData.replace(/[\u200B-\u200D\uFEFF]/g, '');
-      } else if (val === '下划线转驼峰') {
+        return;
+      }
+      if (val === '下划线转驼峰') {
         this.result = this.inputData.split('_').map((w, i) =>
           i === 0 ? w : w.charAt(0).toUpperCase() + w.slice(1)
         ).join('');
+        return;
       }
+      this.result = await TextEncode(this.inputData, val);
     }
   }
 }
 </script>
+
+<style scoped>
+.toolbar-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  flex-shrink: 0;
+}
+.toolbar-group .toolbar {
+  border-radius: 0;
+  box-shadow: none;
+}
+.toolbar-group .toolbar:first-child {
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+.toolbar-group .toolbar:last-child {
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+.chip.icon-only {
+  padding: 6px 8px;
+}
+.chip.icon-only .el-icon {
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+</style>

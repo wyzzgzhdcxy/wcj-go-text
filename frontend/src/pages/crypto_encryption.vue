@@ -1,5 +1,5 @@
 <template>
-  <el-tabs v-model="activeName" @tab-click="handleClick" :tab-position="'left'">
+  <el-tabs v-model="activeName" @tab-click="handleClick" tab-position="top">
     <el-tab-pane name="genKey" style="width:1100px;">
       <template #label>
         <el-icon class="icon_color1" :size="20"><CaretRight /></el-icon>

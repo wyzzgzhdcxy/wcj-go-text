@@ -244,8 +244,6 @@ export default {
       textNav: {
         encode: [
           { path: '/textCommonEncode', label: '常用编码', icon: 'Link' },
-          { path: '/textHashEncode',   label: '哈希编码', icon: 'Lock' },
-          { path: '/textNormal',       label: '普通文本', icon: 'Document' },
           { path: '/crypto_encryption',label: '加解密',   icon: 'Key' },
         ],
         process: [
@@ -410,7 +408,7 @@ export default {
           '/videoTool',
         ];
         const allTextPaths = [
-          '/textCommonEncode','/textHashEncode','/textNormal',
+          '/textCommonEncode',
           '/textBothEnds','/textSort','/textRemove',
           '/textFormat','/textChar','/textFile',
           '/timeConvert','/tpl','/categorizeFiles','/JsonTableView',
@@ -569,7 +567,7 @@ export default {
 }
 .app-sidebar.collapsed .nav-item {
   justify-content: center;
-  padding: 9px 0;
+  padding: 5px 0;
 }
 .app-sidebar.collapsed .sidebar-footer {
   justify-content: center;
