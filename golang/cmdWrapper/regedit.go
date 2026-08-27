@@ -39,11 +39,11 @@ func OpenExplorer(path string) error {
 	switch rt.GOOS {
 	case "windows":
 		fmt.Println("打开资源管理器" + path)
-		return execCommand("explorer", path)
+		return execCommandVisible("explorer", path)
 	case "darwin":
-		return execCommand("open", path)
+		return execCommandVisible("open", path)
 	case "linux":
-		return execCommand("xdg-open", path)
+		return execCommandVisible("xdg-open", path)
 	default:
 		return fmt.Errorf("unsupported platform")
 	}
@@ -52,6 +52,16 @@ func OpenExplorer(path string) error {
 func execCommand(cmdstr, args string) error {
 	cmd := Command(cmdstr, args)
 	// 不设置任何输出
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	err := cmd.Start()
+	return err
+}
+
+// execCommandVisible 启动一个允许显示窗口的子进程。
+// 用于 explorer 等 GUI 程序：被 HideWindow 的 explorer 会静默退出而不弹出窗口。
+func execCommandVisible(cmdstr, args string) error {
+	cmd := CommandVisible(cmdstr, args)
 	cmd.Stdout = nil
 	cmd.Stderr = nil
 	err := cmd.Start()

@@ -309,11 +309,6 @@ func (a *App) OpenUrl(openURL string) error {
 	return cmd.Start()
 }
 
-func (a *App) OpenBrowser(openURL string) error {
-	cmd := cmdWrapper.CommandVisible("rundll32", "url.dll,FileProtocolHandler", openURL)
-	return cmd.Start()
-}
-
 // ---------------- 音乐搜索 ----------------
 
 type MusicSearchResult struct {
