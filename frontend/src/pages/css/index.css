@@ -1,0 +1,43 @@
+/*
+    编辑弹出框的头部
+ */
+.edit_header {
+    padding: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f5f5f5;
+    height: 30px !important;
+    border-bottom: 1px solid #ddd;
+}
+
+
+/* 编辑器弹出框的样式 */
+.editValue {
+    top: -20px;
+    right: 0;
+    width: 70% !important;
+    z-index: 1001;
+    position: fixed;
+    border: 1px solid #ccc !important;
+    border-radius: 5px;
+    margin-top: 20px !important;
+    display: block; /* 默认隐藏内容 */
+}
+
+
+.edit_right_div {
+    flex: 0 0 293px;
+    margin-left: 5px;
+    border: 1px solid blanchedalmond;
+    border-radius: 10px;
+}
+
+
+
+.blanchedalmond_div {
+    flex: 0 0 293px;
+    margin-left: 5px;
+    border: 1px solid blanchedalmond;
+    border-radius: 10px;
+}
