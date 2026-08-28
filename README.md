@@ -79,8 +79,8 @@ wcj-go-text/
 ## 环境要求
 
 - **Go** >= 1.27
-- **Node.js** >= 20
-- **Wails CLI** v2
+- **Node.js** >= 24
+- **Wails CLI** v2.15
 
 可选（仅视频下载功能需要）：
 
