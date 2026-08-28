@@ -252,7 +252,7 @@ export default {
 
     async mergeFiles() {
       const req = {
-        files: this.mergeReq.files,
+        filePaths: this.mergeReq.files,
         output: this.mergeReq.output,
         deleteSrc: false
       }

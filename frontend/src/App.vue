@@ -460,14 +460,14 @@ export default {
 .footer-menu {
   margin-left: auto;
   cursor: pointer;
-  padding: 2px 6px;
+  padding: 6px 10px;
   border-radius: 4px;
 }
 .footer-menu:hover {
   background: rgba(64, 158, 255, 0.1);
 }
 .footer-menu-icon {
-  font-size: 16px;
+  font-size: 26px;
   color: #909399;
 }
 .footer-menu :deep(.el-dropdown-menu__item) {
@@ -479,7 +479,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px 10px;
+  padding: 14px 0 10px 16px;
   flex-shrink: 0;
   gap: 8px;
 }
@@ -566,8 +566,8 @@ export default {
   min-width: 60px;
 }
 .app-sidebar.collapsed .sidebar-header {
-  justify-content: center;
-  padding: 14px 0 10px;
+  justify-content: flex-end;
+  padding: 14px 8px 10px 0;
 }
 .app-sidebar.collapsed .sidebar-title,
 .app-sidebar.collapsed .tab-btn span,
@@ -587,7 +587,22 @@ export default {
   justify-content: center;
   padding: 5px 0;
 }
+.app-sidebar.collapsed .nav-item .nav-icon {
+  width: 26px;
+  height: 26px;
+  font-size: 22px;
+}
+.app-sidebar.collapsed .tab-btn .el-icon {
+  font-size: 22px;
+}
+.app-sidebar.collapsed .footer-menu {
+  padding: 6px 10px;
+}
+.app-sidebar.collapsed .footer-menu-icon {
+  font-size: 28px;
+}
 .app-sidebar.collapsed .sidebar-footer {
-  justify-content: center;
+  justify-content: flex-end;
+  padding-right: 8px;
 }
 </style>

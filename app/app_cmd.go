@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -87,12 +88,28 @@ func (a *App) ShutdownAt(timeStr string) string {
 }
 
 func (a *App) CancelShutdown() string {
+	var out bytes.Buffer
 	cmd := cmdWrapper.Command("shutdown", "/a")
+	cmd.Stdout = &out
+	cmd.Stderr = &out
 	err := cmd.Run()
 	if err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			code := exitErr.ExitCode()
+			msg := strings.TrimSpace(out.String())
+			if code == 1110 || strings.Contains(msg, "1110") ||
+				strings.Contains(msg, "没有进行关机") ||
+				strings.Contains(msg, "没有关机") ||
+				strings.Contains(msg, "No shutdown was in progress") {
+				return "没有定时关机任务"
+			}
+			if msg != "" {
+				return "取消关机失败: " + msg
+			}
+		}
 		return "取消关机失败: " + err.Error()
 	}
-	return "已取消关机"
+	return "取消成功"
 }
 
 func (a *App) RunCmdWithDir(dir, name string, args []string) string {

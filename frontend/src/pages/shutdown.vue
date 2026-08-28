@@ -1,8 +1,6 @@
 <style scoped>
 .shutdown-container {
-  padding: 24px;
-  max-width: 800px;
-  margin: 0 auto;
+  padding: 16px;
 }
 
 .page-title {
@@ -87,6 +85,12 @@
   border: 1px solid #fde2e2;
 }
 
+.warning {
+  background: #fdf6ec;
+  color: #e6a23c;
+  border: 1px solid #faecd8;
+}
+
 .warning-text {
   color: #e6a23c;
   font-size: 13px;
@@ -102,11 +106,6 @@
 
 <template>
   <div class="shutdown-container">
-    <div class="page-title">
-      <span>⏻</span>
-      <span>定时关机</span>
-    </div>
-
     <!-- 倒计时关机 -->
     <div class="shutdown-card">
       <div class="card-title">⏱️ 倒计时关机</div>
@@ -180,6 +179,7 @@
 
 <script>
 import {ShutdownAfterSeconds, ShutdownAt, CancelShutdown, TurnOffDisplayString} from "../wailsjs/go/app/App.js";
+import {ElMessage} from 'element-plus';
 import dayjs from 'dayjs';
 
 export default {
@@ -202,40 +202,54 @@ export default {
       if (this.shutdownResult.includes('错误') || this.shutdownResult.includes('失败')) {
         return 'error';
       }
+      if (this.shutdownResult.includes('没有定时关机任务')) {
+        return 'warning';
+      }
       return 'success';
     }
   },
   methods: {
+    showResult(msg) {
+      this.shutdownResult = msg;
+      if (!msg) return;
+      if (msg.includes('错误') || msg.includes('失败')) {
+        ElMessage.error(msg);
+      } else if (msg.includes('没有定时关机任务')) {
+        ElMessage.warning(msg);
+      } else {
+        ElMessage.success(msg);
+      }
+    },
     shutdownAfterSeconds() {
       let that = this;
       ShutdownAfterSeconds(this.shutdownSeconds).then(res => {
-        that.shutdownResult = res;
+        that.showResult(res);
       }).catch(err => {
-        that.shutdownResult = '错误: ' + err;
+        that.showResult('错误: ' + err);
       });
     },
     shutdownAt() {
       let that = this;
       ShutdownAt(this.shutdownTime).then(res => {
-        that.shutdownResult = res;
+        that.showResult(res);
       }).catch(err => {
-        that.shutdownResult = '错误: ' + err;
+        that.showResult('错误: ' + err);
       });
     },
     cancelShutdown() {
       let that = this;
       CancelShutdown().then(res => {
-        that.shutdownResult = res;
+        that.showResult(res);
       }).catch(err => {
-        that.shutdownResult = '错误: ' + err;
+        that.showResult('错误: ' + err);
       });
     },
     turnOffDisplay() {
       let that = this;
       TurnOffDisplayString().then(res => {
-        that.shutdownResult = res;
+        that.showResult(res);
       }).catch(err => {
-        that.shutdownResult = '错误: ' + err;
+        that.showResult('错误: ' + err);
       });
     }
   }

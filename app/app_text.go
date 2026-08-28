@@ -118,25 +118,34 @@ type MoveFilesRes struct {
 
 // FileSplitReq 文件分割请求
 type FileSplitReq struct {
-	FilePath  string `json:"filePath"`
-	LineCount int    `json:"lineCount"`
+	FilePath     string `json:"filePath"`
+	OutputDir    string `json:"outputDir"`
+	SplitType    string `json:"splitType"`
+	SplitValue   int    `json:"splitValue"`
+	SplitSizeStr string `json:"splitSizeStr"`
+	LineCount    int    `json:"lineCount"`
 }
 
 // FileSplitRes 文件分割结果
 type FileSplitRes struct {
-	Success bool     `json:"success"`
-	Message string   `json:"message"`
-	Files   []string `json:"files"`
+	Success     bool     `json:"success"`
+	Message     string   `json:"message"`
+	OutputDir   string   `json:"outputDir"`
+	TotalSize   int64    `json:"totalSize"`
+	TotalSizeStr string  `json:"totalSizeStr"`
+	SplitFiles  []string `json:"splitFiles"`
 }
 
 // FileMergeReq 文件合并请求
 type FileMergeReq struct {
 	FilePaths []string `json:"filePaths"`
 	Output    string   `json:"output"`
+	DeleteSrc bool     `json:"deleteSrc"`
 }
 
 // FileMergeRes 文件合并结果
 type FileMergeRes struct {
 	Success bool   `json:"success"`
 	Message string `json:"message"`
+	Output  string `json:"output"`
 }
