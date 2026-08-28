@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"syscall"
 )
 
 // Options holds configuration for command execution
@@ -75,28 +74,6 @@ func CommandVisible(name string, args ...string) *exec.Cmd {
 	cmd := exec.Command(name, args...)
 	applySysProcAttrVisible(cmd)
 	return cmd
-}
-
-func applySysProcAttr(cmd *exec.Cmd) {
-	if runtime.GOOS != "windows" {
-		return
-	}
-	if cmd.SysProcAttr == nil {
-		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-		return
-	}
-	cmd.SysProcAttr.HideWindow = true
-}
-
-func applySysProcAttrVisible(cmd *exec.Cmd) {
-	if runtime.GOOS != "windows" {
-		return
-	}
-	if cmd.SysProcAttr == nil {
-		cmd.SysProcAttr = &syscall.SysProcAttr{}
-		return
-	}
-	cmd.SysProcAttr.HideWindow = false
 }
 
 // createCommand creates an exec.Cmd with the given options

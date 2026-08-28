@@ -9,12 +9,6 @@ import (
 	"github.com/wyzzgzhdcxy/wcj-go-common/core"
 )
 
-// exist 检查路径（文件或目录）是否存在
-func exist(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil
-}
-
 // CategorizeFiles 根据提供的字符串列表（可能是文件名的某种模式或标签）来归类文件
 // 读取指定目录中的文件列表。
 // 遍历文件列表，并检查每个文件名是否与提供的字符串列表中的任何一个匹配。
@@ -36,11 +30,8 @@ func CategorizeFiles(dir string, categories []string) core.MySet {
 			// 这里假设我们基于文件名前缀来归类，你可以根据需要修改匹配逻辑
 			if strings.HasPrefix(filename, category) {
 				dirPath := filepath.Join(dir, category)
-				if !exist(dirPath) {
-					err := os.MkdirAll(dirPath, os.ModePerm)
-					if err != nil {
-						log.Printf("创建文件夹异常:%s", dirPath)
-					}
+				if !core.FileExist(dirPath) {
+					core.MkDirALl0777(dirPath)
 				}
 				err := os.Rename(filepath.Join(dir, filename), filepath.Join(dirPath, filename))
 				//set.Add(category)

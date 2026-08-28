@@ -1,11 +1,11 @@
 package myNet
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
 	"log"
 	"net"
+
+	"github.com/wyzzgzhdcxy/wcj-go-common/core"
 )
 
 // GetMacAdders 获取所有的mac地址
@@ -83,12 +83,5 @@ func GetIpList() {
 }
 
 func GetMacMd5() string {
-	// 创建一个MD5哈希对象
-	hash := md5.New()
-	// 将数据添加到哈希对象中
-	hash.Write([]byte(GetMacAdder()))
-	// 计算哈希值
-	hashValue := hash.Sum(nil)
-	// 将哈希值转换为十六进制字符串
-	return hex.EncodeToString(hashValue)
+	return core.Md5Byte([]byte(GetMacAdder()))
 }
