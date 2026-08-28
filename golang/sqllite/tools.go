@@ -5,14 +5,15 @@ import (
 	"fmt"
 )
 
-// toolsDB 单例句柄，对应 tools_settings.db。
+// toolsDB 单例句柄，对应 sync_list.db 中的 tool_usage_stats / cmd_history / cmd_commands
+// （settings 表由 settings.go 统一管理）。
 var toolsDB *sql.DB
 
 func getToolsDB() *sql.DB {
 	if toolsDB != nil {
 		return toolsDB
 	}
-	db := getOrOpen("tools_settings.db")
+	db := getOrOpen(mainDBFile)
 	if db == nil {
 		return nil
 	}
@@ -22,14 +23,6 @@ func getToolsDB() *sql.DB {
 }
 
 var toolsSchema = []string{
-	`CREATE TABLE IF NOT EXISTS settings (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		key TEXT NOT NULL UNIQUE,
-		value TEXT,
-		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-	)`,
-	`CREATE INDEX IF NOT EXISTS idx_settings_key ON settings(key)`,
 	`CREATE TABLE IF NOT EXISTS tool_usage_stats (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		link TEXT NOT NULL,

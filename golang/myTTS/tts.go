@@ -236,11 +236,11 @@ func OpenAudioFolder() string {
 		var cmd *exec.Cmd
 		switch runtime.GOOS {
 		case "windows":
-			cmd = cmdWrapper.Command("explorer", ttsDir)
+			cmd = cmdWrapper.CommandVisible("explorer", ttsDir)
 		case "darwin":
-			cmd = cmdWrapper.Command("open", ttsDir)
+			cmd = cmdWrapper.CommandVisible("open", ttsDir)
 		case "linux":
-			cmd = cmdWrapper.Command("xdg-open", ttsDir)
+			cmd = cmdWrapper.CommandVisible("xdg-open", ttsDir)
 		}
 		if cmd != nil {
 			cmd.Start()

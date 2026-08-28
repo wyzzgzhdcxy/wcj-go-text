@@ -34,14 +34,14 @@ type GitSyncLog struct {
 	PushLog   string `json:"pushLog"`
 }
 
-// gitDB 单例句柄，对应 sync_list.db。
+// gitDB 单例句柄，对应 sync_list.db 中的 git_repos / sync_logs。
 var gitDB *sql.DB
 
 func getGitDB() *sql.DB {
 	if gitDB != nil {
 		return gitDB
 	}
-	db := getOrOpen("sync_list.db")
+	db := getOrOpen(mainDBFile)
 	if db == nil {
 		return nil
 	}

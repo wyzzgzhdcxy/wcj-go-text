@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// settingsDB 单例句柄，对应 image_tools.db。
+// settingsDB 单例句柄，对应 sync_list.db 中的 settings / image_prompts / emoji_images。
 var settingsDB *sql.DB
 
 // getSettingsDB 返回 settingsDB，第一次调用时建表并缓存。
@@ -13,7 +13,7 @@ func getSettingsDB() *sql.DB {
 	if settingsDB != nil {
 		return settingsDB
 	}
-	db := getOrOpen("image_tools.db")
+	db := getOrOpen(mainDBFile)
 	if db == nil {
 		return nil
 	}

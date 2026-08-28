@@ -1,6 +1,9 @@
 @echo off
 setlocal
 
+REM 切到仓库根目录（脚本所在目录的上级）
+cd /d "%~dp0\.."
+
 REM 注入构建时间到 main.BuildTime，然后执行 wails build
 for /f "usebackq delims=" %%I in (`powershell -NoProfile -Command "Get-Date -Format 'yyyy-MM-ddTHH:mm:ss'"`) do set BUILD_TIME=%%I
 

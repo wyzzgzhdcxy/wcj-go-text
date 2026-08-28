@@ -19,14 +19,14 @@ type MusicAudioSource struct {
 	CreatedAt string `json:"created_at"`
 }
 
-// musicDB 单例句柄，对应 music_cache.db。
+// musicDB 单例句柄，对应 sync_list.db 中的 music_* 表。
 var musicDB *sql.DB
 
 func getMusicDB() *sql.DB {
 	if musicDB != nil {
 		return musicDB
 	}
-	db := getOrOpen("music_cache.db")
+	db := getOrOpen(mainDBFile)
 	if db == nil {
 		return nil
 	}
