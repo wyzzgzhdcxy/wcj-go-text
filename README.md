@@ -95,7 +95,7 @@ wcj-go-text/
 
 ```bash
 # 安装 Wails CLI
-go install github.com/wailsapp/wails/v2/cmd/wails@v2.14.0
+go install github.com/wailsapp/wails/v2/cmd/wails@v2.15.0
 
 # 安装前端依赖
 cd frontend
@@ -124,9 +124,9 @@ wails build -nsis
 
 ### CI 自动构建
 
-推送代码到 `main` 或打 `v*` 标签会触发 GitHub Actions 构建（Windows / amd64）。其中：
+打 `v*` 标签或在 Actions 页面手动触发（`workflow_dispatch`）会触发 GitHub Actions 构建（Windows / amd64）。其中：
 
-- 推送 `main`：仅构建并上传产物到 workflow 的 Artifacts
+- 手动触发：仅构建并上传产物到 workflow 的 Artifacts
 - 打 `v*` 标签：构建完成后自动创建 GitHub Release，并挂载 `.exe` 安装包
 
 ```bash
