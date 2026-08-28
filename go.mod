@@ -18,7 +18,7 @@ require (
 	github.com/robfig/cron v1.2.0
 	github.com/spf13/viper v1.21.0
 	github.com/wailsapp/wails/v2 v2.15.0
-	github.com/wyzzgzhdcxy/wcj-go-common v0.0.0-20260419095559-e41d5f86e3eb
+	github.com/wyzzgzhdcxy/wcj-go-common v0.0.0-20260828101448-ca6a9945db74
 	golang.org/x/crypto v0.55.0
 	golang.org/x/image v0.45.0
 	golang.org/x/text v0.41.0
