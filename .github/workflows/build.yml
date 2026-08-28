@@ -61,7 +61,7 @@ jobs:
         run: ls -la build/bin/
 
       - name: Upload raw binary
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: wcj-go-text-windows-raw
           path: |
@@ -72,7 +72,7 @@ jobs:
           retention-days: 30
 
       - name: Upload installer / package
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: wcj-go-text-windows-${{ steps.version.outputs.value }}
           path: |
