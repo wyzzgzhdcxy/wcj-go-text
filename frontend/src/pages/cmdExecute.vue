@@ -43,7 +43,7 @@ table {
     <div class="function-group" style="width: 600px">
       <div class="function-title">注册表启动项</div>
       <div class="function-description">
-        打开注册表后，手动导航到以下路径查看和管理开机启动项：
+        点击按钮将自动打开注册表编辑器并定位到开机启动项，方便查看和管理开机自启动程序：
       </div>
       <div style="display: flex; align-items: center; gap: 8px; margin: 10px 0;">
         <code style="font-size: 13px; color: #606266;">HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run</code>
@@ -134,7 +134,7 @@ export default {
     async openRegistryStartup() {
       try {
         await OpenRegistryStartup();
-        this.$message.success("已打开注册表，请在路径栏输入上述注册表路径");
+        this.$message.success("已打开注册表并定位到开机启动项");
       } catch (err) {
         console.error("打开注册表启动项失败:", err);
         this.$message.error("打开注册表启动项失败: " + err.message);
