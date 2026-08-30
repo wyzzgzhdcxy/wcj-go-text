@@ -21,6 +21,8 @@
           <button class="chip" :class="{ primary: group === 'chars' }" @click="group = 'chars'">添加字符</button>
           <button class="chip" :class="{ primary: group === 'sort' }" @click="group = 'sort'">排序</button>
           <button class="chip" :class="{ primary: group === 'remove' }" @click="group = 'remove'">去除重复</button>
+          <button class="chip" :class="{ primary: group === 'format' }" @click="group = 'format'">格式转换</button>
+          <button class="chip" :class="{ primary: group === 'char' }" @click="group = 'char'">字符转换</button>
         </div>
 
         <div class="toolbar">
@@ -45,12 +47,27 @@
             <button class="chip" @click="reverseLines"><span class="icon">⇓</span>倒序</button>
           </template>
 
-          <template v-else>
+          <template v-else-if="group === 'remove'">
             <span class="toolbar-label">参数</span>
             <label class="inline-input">替换字符
               <input v-model="replaceChar" maxlength="3" />
             </label>
             <button class="chip primary" @click="trimRepeatedChar"><span class="icon">✕</span>去除重复</button>
+          </template>
+
+          <template v-else-if="group === 'format'">
+            <span class="toolbar-label">格式</span>
+            <button class="chip primary" @click="toSqlQuery"><span class="icon">⊟</span>转SQL 条件</button>
+            <span class="group-hint">每行一个值，合并为 SQL IN 条件</span>
+          </template>
+
+          <template v-else>
+            <span class="toolbar-label">参数</span>
+            <label class="inline-input">分割符
+              <input v-model="splitChar" maxlength="3" />
+            </label>
+            <button class="chip primary" @click="toJSON"><span class="icon">{}</span>转JSON</button>
+            <span class="group-hint">首行为表头，其它行为数据</span>
           </template>
         </div>
       </div>
@@ -77,7 +94,7 @@
 
 <script>
 import trimRepeated from 'trim-repeated';
-import { CopyToClipboard } from "../wailsjs/go/app/App.js";
+import { CopyToClipboard, Text2Json } from "../wailsjs/go/app/App.js";
 import { ElNotification } from "element-plus";
 import { Delete, Sort, DocumentCopy } from "@element-plus/icons-vue";
 
@@ -90,7 +107,8 @@ export default {
       result: '',
       charList: ["'", '"', '#', 'a'],
       customChar: '',
-      replaceChar: '#'
+      replaceChar: '#',
+      splitChar: ','
     }
   },
   computed: {
@@ -121,6 +139,10 @@ export default {
         return false;
       }
       return true;
+    },
+    // 统一换行符为 \n，避免 Windows CRLF 影响按行处理
+    normalizeEol() {
+      return this.inputData.replace(/\r\n/g, '\n');
     },
     // 添加字符：每行首尾添加指定字符
     addChar(c) {
@@ -155,7 +177,34 @@ export default {
         return;
       }
       this.result = trimRepeated(this.inputData, this.replaceChar);
+    },
+    // 格式转换：每行值合并为 SQL IN 条件，如 ('a', 'b', 'c')
+    toSqlQuery() {
+      if (!this.needInput()) return;
+      const arr = this.normalizeEol().split('\n').filter(v => v.trim() !== '');
+      if (!arr.length) {
+        ElNotification({ title: '数据为空', message: '请先输入文本', position: 'bottom-right', type: 'error' });
+        return;
+      }
+      this.result = "(" + arr.map(v => `'${v}'`).join(', ') + ")";
+    },
+    // 字符转换：首行表头 + 分隔符数据 → JSON 数组
+    async toJSON() {
+      if (!this.needInput()) return;
+      if (!this.splitChar) {
+        ElNotification({ title: '参数为空', message: '请填写分割符', position: 'bottom-right', type: 'error' });
+        return;
+      }
+      const r = await Text2Json(this.normalizeEol(), this.splitChar);
+      this.result = JSON.stringify(r);
     }
   }
 }
 </script>
+
+<style scoped>
+.group-hint {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+</style>

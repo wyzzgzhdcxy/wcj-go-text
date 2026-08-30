@@ -27,6 +27,7 @@
 <script>
 
 import {GenIdNo, ParseIdNo, GenerateBankCardNo, ParseBankCard, IpParse} from "../wailsjs/go/app/App.js";
+import {ElMessage, ElMessageBox} from 'element-plus';
 
 export default {
   data() {
@@ -40,7 +41,7 @@ export default {
   methods: {
     async generatorBankNo() {
       let that = this;
-      this.$prompt('请输入要生成的银行卡号个数', '银行卡号生成', {
+      ElMessageBox.prompt('请输入要生成的银行卡号个数', '银行卡号生成', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         inputValue: '10',
@@ -50,7 +51,7 @@ export default {
       }).then(({ value }) => {
         let num = parseInt(value);
         if (num <= 0 || num > 100) {
-          this.$message.error('请输入1-100之间的数字');
+          ElMessage.error('请输入1-100之间的数字');
           return;
         }
         GenerateBankCardNo(num).then(resData => {
@@ -61,7 +62,7 @@ export default {
 
     async parseBankCardNo() {
       let that = this;
-      this.$prompt('请输入银行卡号', '解析银行卡号', {
+      ElMessageBox.prompt('请输入银行卡号', '解析银行卡号', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         inputType: 'number',
@@ -74,7 +75,7 @@ export default {
 
     async genIdNo() {
       let that = this;
-      this.$prompt('请输入要生成的身份证号个数', '身份证号生成', {
+      ElMessageBox.prompt('请输入要生成的身份证号个数', '身份证号生成', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         inputValue: '10',
@@ -84,7 +85,7 @@ export default {
       }).then(({ value }) => {
         let num = parseInt(value);
         if (num <= 0 || num > 100) {
-          this.$message.error('请输入1-100之间的数字');
+          ElMessage.error('请输入1-100之间的数字');
           return;
         }
         GenIdNo(num).then(resData => {
@@ -96,7 +97,7 @@ export default {
 
     async parseNo() {
       let that = this;
-      this.$prompt('请输入身份证号', '解析身份证号', {
+      ElMessageBox.prompt('请输入身份证号', '解析身份证号', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         inputType: 'number',

@@ -154,8 +154,6 @@ export default {
           { path: '/TextBasicTools',    label: '文本差集', icon: 'Operation' },
         ],
         format: [
-          { path: '/textFormat',        label: '格式转换', icon: 'MagicStick' },
-          { path: '/textChar',          label: '字符转换', icon: 'DataLine' },
           { path: '/JsonTableView',     label: 'JSON表格', icon: 'DataAnalysis' },
           { path: '/JsonTools',         label: 'JSON工具', icon: 'Tickets' },
           { path: '/SqlTools',          label: 'SQL工具',  icon: 'Histogram' },
@@ -300,7 +298,7 @@ export default {
         const allTextPaths = [
           '/textCommonEncode',
           '/symmetricCrypto',
-          '/textBothEnds','/textFormat','/textChar',
+          '/textBothEnds',
           '/timeConvert','/tpl','/categorizeFiles','/JsonTableView',
           '/JavaTools','/cmdExecute','/SqlTools',
           '/TextBasicTools','/cronExp','/fileSync','/salary',
