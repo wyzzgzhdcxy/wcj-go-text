@@ -246,12 +246,10 @@ export default {
         encode: [
           { path: '/textCommonEncode', label: '常用编码', icon: 'Link' },
           { path: '/symmetricCrypto', label: '对称加密', icon: 'Lock' },
-          { path: '/crypto_encryption',label: '加解密',   icon: 'Key' },
+          { path: '/crypto_encryption',label: '公钥算法',   icon: 'Key' },
         ],
         process: [
-          { path: '/textBothEnds',     label: '文本两端', icon: 'Sort' },
-          { path: '/textSort',         label: '文本排序', icon: 'Operation' },
-          { path: '/textRemove',       label: '去除文本', icon: 'Scissor' },
+          { path: '/textBothEnds',     label: '简单文本', icon: 'Sort' },
           { path: '/TextBasicTools',    label: '文本差集', icon: 'Operation' },
         ],
         format: [
@@ -275,7 +273,6 @@ export default {
         ],
         system: [
           { path: '/cmdExecute',        label: '命令行',   icon: 'Promotion' },
-          { path: '/cmdManager',        label: '命令管理', icon: 'List' },
           { path: '/envCheck',          label: '环境检测', icon: 'ChatLineRound' },
           { path: '/envVariables',      label: '环境变量', icon: 'SetUp' },
           { path: '/shutdown',          label: '定时关机', icon: 'Timer' },
@@ -412,10 +409,9 @@ export default {
         const allTextPaths = [
           '/textCommonEncode',
           '/symmetricCrypto',
-          '/textBothEnds','/textSort','/textRemove',
-          '/textFormat','/textChar','/textFile',
+          '/textBothEnds','/textFormat','/textChar','/textFile',
           '/timeConvert','/tpl','/categorizeFiles','/JsonTableView',
-          '/JavaTools','/cmdExecute','/cmdManager','/SqlTools',
+          '/JavaTools','/cmdExecute','/SqlTools',
           '/TextBasicTools','/cronExp','/fileSync','/salary',
           '/idcard','/rename','/envCheck','/shutdown','/crypto_encryption',
           '/expresson','/JsonTools','/FileBackup','/fileSplitMerge',

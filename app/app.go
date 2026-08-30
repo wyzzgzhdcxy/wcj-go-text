@@ -11,9 +11,12 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"embed"
+	"encoding/base32"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"hash/crc32"
+	"html"
 	"io"
 	"net/url"
 	"os"
@@ -25,8 +28,11 @@ import (
 	"sync/atomic"
 	"time"
 	"unicode"
+	"unicode/utf16"
+	"unicode/utf8"
 
 	"github.com/atotto/clipboard"
+	"github.com/tjfoc/gmsm/sm3"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 	"github.com/wyzzgzhdcxy/wcj-go-common/core"
@@ -190,7 +196,7 @@ func (a *App) TextEncode(plainText string, opType string) string {
 
 	switch opType {
 	case "url编码", "url encode":
-		return url.QueryEscape(plainText)
+		return urlEscape(plainText)
 	case "url解码", "url decode":
 		decoded, err := url.QueryUnescape(plainText)
 		if err != nil {
@@ -200,30 +206,74 @@ func (a *App) TextEncode(plainText string, opType string) string {
 	case "base64编码", "base64 encode":
 		return base64.StdEncoding.EncodeToString([]byte(plainText))
 	case "base64解码", "base64 decode":
-		decoded, err := base64.StdEncoding.DecodeString(plainText)
+		decoded, err := decodeBase64Lines(plainText)
 		if err != nil {
 			return "Base64解码错误: " + err.Error()
+		}
+		return string(decoded)
+	case "base32编码", "base32 encode":
+		return base32.StdEncoding.EncodeToString([]byte(plainText))
+	case "base32解码", "base32 decode":
+		decoded, err := decodeBase32Flexible(plainText)
+		if err != nil {
+			return "Base32解码错误: " + err.Error()
 		}
 		return string(decoded)
 	case "hex编码", "hex encode":
 		return hex.EncodeToString([]byte(plainText))
 	case "hex解码", "hex decode":
-		decoded, err := hex.DecodeString(plainText)
+		decoded, err := hex.DecodeString(stripHexNoise(plainText))
 		if err != nil {
 			return "Hex解码错误: " + err.Error()
 		}
 		return string(decoded)
+	case "unicode编码", "unicode encode":
+		return unicodeEncode(plainText)
+	case "unicode解码", "unicode decode":
+		decoded, err := unicodeDecode(plainText)
+		if err != nil {
+			return "Unicode解码错误: " + err.Error()
+		}
+		return decoded
+	case "html编码", "html encode":
+		return html.EscapeString(plainText)
+	case "html解码", "html decode":
+		return html.UnescapeString(plainText)
+	case "二进制编码", "binary encode":
+		parts := make([]string, 0, len(plainText))
+		for _, b := range []byte(plainText) {
+			parts = append(parts, fmt.Sprintf("%08b", b))
+		}
+		return strings.Join(parts, " ")
+	case "二进制解码", "binary decode":
+		decoded, err := binaryDecode(plainText)
+		if err != nil {
+			return "二进制解码错误: " + err.Error()
+		}
+		return decoded
 	case "md5":
 		return fmt.Sprintf("%x", md5.Sum([]byte(plainText)))
 	case "sha1":
 		hash := sha1.Sum([]byte(plainText))
 		return hex.EncodeToString(hash[:])
+	case "sha224":
+		hash := sha256.Sum224([]byte(plainText))
+		return hex.EncodeToString(hash[:])
 	case "sha256":
 		hash := sha256.Sum256([]byte(plainText))
+		return hex.EncodeToString(hash[:])
+	case "sha384":
+		hash := sha512.Sum384([]byte(plainText))
 		return hex.EncodeToString(hash[:])
 	case "sha512":
 		hash := sha512.Sum512([]byte(plainText))
 		return hex.EncodeToString(hash[:])
+	case "sm3":
+		h := sm3.New()
+		h.Write([]byte(plainText))
+		return hex.EncodeToString(h.Sum(nil))
+	case "crc32":
+		return fmt.Sprintf("%08x", crc32.ChecksumIEEE([]byte(plainText)))
 	case "ascii编码", "ascii encode":
 		var result strings.Builder
 		for _, r := range plainText {
@@ -235,8 +285,8 @@ func (a *App) TextEncode(plainText string, opType string) string {
 		var result strings.Builder
 		for _, part := range parts {
 			code, err := strconv.Atoi(part)
-			if err != nil {
-				return "ASCII解码错误: " + err.Error()
+			if err != nil || code < 0 || code > unicode.MaxRune || !utf8.ValidRune(rune(code)) {
+				return "ASCII解码错误: 非法码值 " + part
 			}
 			result.WriteRune(rune(code))
 		}
@@ -249,7 +299,7 @@ func (a *App) TextEncode(plainText string, opType string) string {
 		return strings.ToLower(plainText)
 	case "反转字符串", "reverse":
 		return reverseString(plainText)
-	case "去除空格", "trim space":
+	case "去除空格", "压缩空格", "trim space":
 		return strings.Join(strings.Fields(plainText), " ")
 	default:
 		return plainText
@@ -292,15 +342,212 @@ func (a *App) Text2Json(content string, splitChar string) []map[string]string {
 	return list
 }
 
+// camelToSnake 驼峰转下划线：小写/数字后接大写、或大写缩略词接小写单词时插入下划线
+// （JSONData → json_data、HTTPServer → http_server、fooBar → foo_bar）
 func camelToSnake(s string) string {
+	runes := []rune(s)
 	var result []rune
-	for i, r := range s {
+	for i, r := range runes {
 		if unicode.IsUpper(r) && i > 0 {
-			result = append(result, '_')
+			prevLowerOrDigit := unicode.IsLower(runes[i-1]) || unicode.IsDigit(runes[i-1])
+			prevUpperAndNextLower := unicode.IsUpper(runes[i-1]) && i+1 < len(runes) && unicode.IsLower(runes[i+1])
+			if prevLowerOrDigit || prevUpperAndNextLower {
+				result = append(result, '_')
+			}
+			result = append(result, unicode.ToLower(r))
+		} else if unicode.IsUpper(r) {
+			result = append(result, unicode.ToLower(r))
+		} else {
+			result = append(result, r)
 		}
-		result = append(result, unicode.ToLower(r))
 	}
 	return string(result)
+}
+
+// urlEscape 与 JavaScript 的 encodeURIComponent 行为一致：
+// 仅保留 A-Za-z0-9-_.~，空格编码为 %20（修正 QueryEscape 将空格编为 "+" 的问题），十六进制大写
+func urlEscape(s string) string {
+	var b strings.Builder
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') ||
+			c == '-' || c == '_' || c == '.' || c == '~' {
+			b.WriteByte(c)
+		} else {
+			fmt.Fprintf(&b, "%%%02X", c)
+		}
+	}
+	return b.String()
+}
+
+// stripWhitespace 去除字符串中的所有空白字符
+func stripWhitespace(s string) string {
+	return strings.Map(func(r rune) rune {
+		if unicode.IsSpace(r) {
+			return -1
+		}
+		return r
+	}, s)
+}
+
+// stripHexNoise 去除 HEX 文本中的常见分隔符（空白/冒号/逗号/连字符/0x 前缀），
+// 兼容 "68 65 6c"、"68:65:6c" 等粘贴格式
+func stripHexNoise(s string) string {
+	s = strings.ReplaceAll(s, "0x", "")
+	s = strings.ReplaceAll(s, "0X", "")
+	return strings.Map(func(r rune) rune {
+		if unicode.IsSpace(r) || r == ':' || r == ',' || r == '-' {
+			return -1
+		}
+		return r
+	}, s)
+}
+
+// decodeBase64Flexible 解码 Base64：忽略空白，兼容 URL-safe 与无填充变体
+func decodeBase64Flexible(s string) ([]byte, error) {
+	s = stripWhitespace(s)
+	for _, enc := range []*base64.Encoding{
+		base64.StdEncoding, base64.RawStdEncoding,
+		base64.URLEncoding, base64.RawURLEncoding,
+	} {
+		if b, err := enc.DecodeString(s); err == nil {
+			return b, nil
+		}
+	}
+	return nil, fmt.Errorf("不是合法的 Base64 字符串")
+}
+
+// decodeBase64Lines 解码 Base64：
+// 优先整体解码（兼容单个长值被换行拆开的粘贴格式）；
+// 整体失败时按行逐条解码（每行一个独立值，结果按行拼接），某行非法则报错定位到行
+func decodeBase64Lines(s string) ([]byte, error) {
+	if b, err := decodeBase64Flexible(s); err == nil {
+		return b, nil
+	}
+	var nonEmpty []string
+	for _, l := range strings.Split(s, "\n") {
+		if t := strings.TrimSpace(l); t != "" {
+			nonEmpty = append(nonEmpty, t)
+		}
+	}
+	if len(nonEmpty) <= 1 {
+		return nil, fmt.Errorf("不是合法的 Base64 字符串")
+	}
+	var out []byte
+	for i, l := range nonEmpty {
+		b, err := decodeBase64Flexible(l)
+		if err != nil {
+			return nil, fmt.Errorf("第 %d 行不是合法的 Base64", i+1)
+		}
+		out = append(out, b...)
+		if i < len(nonEmpty)-1 {
+			out = append(out, '\n')
+		}
+	}
+	return out, nil
+}
+
+// decodeBase32Flexible 解码 Base32：忽略空白、大小写不敏感、兼容无填充变体
+func decodeBase32Flexible(s string) ([]byte, error) {
+	s = strings.ToUpper(stripWhitespace(s))
+	noPad := base32.StdEncoding.WithPadding(base32.NoPadding)
+	for _, enc := range []*base32.Encoding{
+		base32.StdEncoding, noPad,
+	} {
+		if b, err := enc.DecodeString(s); err == nil {
+			return b, nil
+		}
+	}
+	return nil, fmt.Errorf("不是合法的 Base32 字符串")
+}
+
+// unicodeEncode 编码为 \uXXXX 转义序列，超出 BMP 的字符按 UTF-16 代理对展开（与 JS JSON.stringify 一致）
+func unicodeEncode(s string) string {
+	var b strings.Builder
+	for _, r := range s {
+		if r > 0xFFFF {
+			hi, lo := utf16.EncodeRune(r)
+			fmt.Fprintf(&b, "\\u%04x\\u%04x", hi, lo)
+		} else {
+			fmt.Fprintf(&b, "\\u%04x", r)
+		}
+	}
+	return b.String()
+}
+
+// unicodeDecode 解析 \uXXXX 转义（自动合并代理对），其余字符原样保留
+func unicodeDecode(s string) (string, error) {
+	var b strings.Builder
+	runes := []rune(s)
+	for i := 0; i < len(runes); i++ {
+		if runes[i] != '\\' || i+5 >= len(runes) || (runes[i+1] != 'u' && runes[i+1] != 'U') {
+			b.WriteRune(runes[i])
+			continue
+		}
+		v, err := strconv.ParseUint(string(runes[i+2:i+6]), 16, 32)
+		if err != nil {
+			return "", fmt.Errorf("非法的 Unicode 转义")
+		}
+		code := rune(v)
+		// 高位代理后面紧跟低位代理时合并为完整字符（如 😀 → \ud83d\ude00）
+		if utf16.IsSurrogate(code) && i+11 < len(runes) && runes[i+6] == '\\' && (runes[i+7] == 'u' || runes[i+7] == 'U') {
+			v2, err := strconv.ParseUint(string(runes[i+8:i+12]), 16, 32)
+			if err == nil && utf16.IsSurrogate(rune(v2)) {
+				if r := utf16.DecodeRune(code, rune(v2)); r != unicode.ReplacementChar {
+					b.WriteRune(r)
+					i += 11
+					continue
+				}
+			}
+		}
+		if utf16.IsSurrogate(code) {
+			b.WriteRune(unicode.ReplacementChar)
+		} else {
+			b.WriteRune(code)
+		}
+		i += 5
+	}
+	return b.String(), nil
+}
+
+// binaryDecode 解码二进制文本：支持空格分隔的任意宽度二进制分组，
+// 也支持连续的 8 位二进制串（如 0100000101100010）
+func binaryDecode(s string) (string, error) {
+	tokens := strings.Fields(s)
+	if len(tokens) == 0 {
+		return "", nil
+	}
+	// 无分隔的连续二进制串按 8 位一组切分
+	if len(tokens) == 1 && len(tokens[0])%8 == 0 && isBinaryDigits(tokens[0]) {
+		t := tokens[0]
+		out := make([]byte, 0, len(t)/8)
+		for i := 0; i < len(t); i += 8 {
+			v, err := strconv.ParseUint(t[i:i+8], 2, 32)
+			if err != nil {
+				return "", fmt.Errorf("非法的二进制字符")
+			}
+			out = append(out, byte(v))
+		}
+		return string(out), nil
+	}
+	var out []byte
+	for _, t := range tokens {
+		v, err := strconv.ParseUint(t, 2, 32)
+		if err != nil || v > 255 {
+			return "", fmt.Errorf("非法的二进制分组 %s", t)
+		}
+		out = append(out, byte(v))
+	}
+	return string(out), nil
+}
+
+func isBinaryDigits(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] != '0' && s[i] != '1' {
+			return false
+		}
+	}
+	return true
 }
 
 func reverseString(s string) string {

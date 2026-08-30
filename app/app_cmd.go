@@ -161,60 +161,6 @@ func (a *App) NowTime() string {
 	return time.Now().Format("2006-01-02 15:04:05")
 }
 
-// CmdCommand 命令行管理（与 sqllite.CmdCommand 字段对齐，供 Wails 绑定）
-type CmdCommand = sqllite.CmdCommand
-
-func (a *App) ListCmdCommands() []CmdCommand {
-	cmds, err := sqllite.ListCmdCommands()
-	if err != nil {
-		return []CmdCommand{}
-	}
-	return cmds
-}
-
-func (a *App) AddCmdCommand(cmd CmdCommand) (int, error) {
-	return sqllite.AddCmdCommand(cmd)
-}
-
-func (a *App) UpdateCmdCommand(cmd CmdCommand) error {
-	return sqllite.UpdateCmdCommand(cmd)
-}
-
-func (a *App) DeleteCmdCommand(id int) error {
-	return sqllite.DeleteCmdCommand(id)
-}
-
-// ExecuteCmdCommand 执行命令行
-func (a *App) ExecuteCmdCommand(id int, command string) (string, error) {
-	storedCommand, err := sqllite.GetCmdCommandByID(id)
-	if err != nil {
-		return "", fmt.Errorf("查询命令行失败: %v", err)
-	}
-	cmdStr := storedCommand
-	if command != "" {
-		cmdStr = command
-	}
-	if cmdStr == "" {
-		return "", fmt.Errorf("命令为空")
-	}
-	cmd := core.Command("cmd", "/C", cmdStr)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return string(output), fmt.Errorf("执行命令失败: %v", err)
-	}
-	return string(output), nil
-}
-
-// ExecuteRawCommand 执行原始命令
-func (a *App) ExecuteRawCommand(command string) (string, error) {
-	cmd := core.Command("cmd", "/C", command)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return string(output), fmt.Errorf("执行命令失败: %v", err)
-	}
-	return string(output), nil
-}
-
 // OpenEnvironmentEditor 打开系统环境变量编辑器
 func (a *App) OpenEnvironmentEditor() {
 	cmd := core.Command("rundll32", "sysdm.cpl,EditEnvironmentVariables")
