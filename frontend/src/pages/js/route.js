@@ -18,7 +18,6 @@ const routeDefs = [
     {path: '/textBothEnds', component: () => import('../textBothEnds.vue'), meta: { title: '简单文本' }},
     {path: '/textFormat', component: () => import('../textFormat.vue'), meta: { title: '格式转换' }},
     {path: '/textChar', component: () => import('../textChar.vue'), meta: { title: '字符转换' }},
-    {path: '/textFile', component: () => import('../textFile.vue'), meta: { title: '文件处理' }},
     {path: '/appGenerator', component: () => import('../appGenerator.vue'), meta: { title: '应用生成' }},
 
     {path: '/ytdlp', component: () => import('../ytdlp.vue'), meta: { title: 'yt-dlp 下载' }},

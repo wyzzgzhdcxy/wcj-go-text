@@ -21,159 +21,42 @@
 
       <nav class="sidebar-nav">
         <template v-if="activeTab === 'text'">
-          <div v-if="visibleTextNav.encode.length" class="nav-group-label">编码</div>
-          <router-link
-            v-for="item in visibleTextNav.encode"
-            :key="item.path"
-            :to="item.path"
-            class="nav-item"
-            :class="{ active: $route.path === item.path }"
-          >
-            <el-icon class="nav-icon"><component :is="item.icon" /></el-icon>
-            <span>{{ item.label }}</span>
-          </router-link>
-
-          <div v-if="visibleTextNav.process.length" class="nav-group-label">处理</div>
-          <router-link
-            v-for="item in visibleTextNav.process"
-            :key="item.path"
-            :to="item.path"
-            class="nav-item"
-            :class="{ active: $route.path === item.path }"
-          >
-            <el-icon class="nav-icon"><component :is="item.icon" /></el-icon>
-            <span>{{ item.label }}</span>
-          </router-link>
-
-          <div v-if="visibleTextNav.format.length" class="nav-group-label">格式</div>
-          <router-link
-            v-for="item in visibleTextNav.format"
-            :key="item.path"
-            :to="item.path"
-            class="nav-item"
-            :class="{ active: $route.path === item.path }"
-          >
-            <el-icon class="nav-icon"><component :is="item.icon" /></el-icon>
-            <span>{{ item.label }}</span>
-          </router-link>
-
-          <div v-if="visibleTextNav.file.length" class="nav-group-label">文件</div>
-          <router-link
-            v-for="item in visibleTextNav.file"
-            :key="item.path"
-            :to="item.path"
-            class="nav-item"
-            :class="{ active: $route.path === item.path }"
-          >
-            <el-icon class="nav-icon"><component :is="item.icon" /></el-icon>
-            <span>{{ item.label }}</span>
-          </router-link>
-
-          <div v-if="visibleTextNav.codeGen.length" class="nav-group-label">代码生成</div>
-          <router-link
-            v-for="item in visibleTextNav.codeGen"
-            :key="item.path"
-            :to="item.path"
-            class="nav-item"
-            :class="{ active: $route.path === item.path }"
-          >
-            <el-icon class="nav-icon"><component :is="item.icon" /></el-icon>
-            <span>{{ item.label }}</span>
-          </router-link>
-
-          <div v-if="visibleTextNav.system.length" class="nav-group-label">系统工具</div>
-          <router-link
-            v-for="item in visibleTextNav.system"
-            :key="item.path"
-            :to="item.path"
-            class="nav-item"
-            :class="{ active: $route.path === item.path }"
-          >
-            <el-icon class="nav-icon"><component :is="item.icon" /></el-icon>
-            <span>{{ item.label }}</span>
-          </router-link>
+          <template v-for="g in visibleTextGroups" :key="g.key">
+            <div v-if="g.items.length" class="nav-group-label">{{ g.label }}</div>
+            <router-link
+              v-for="item in g.items"
+              :key="item.path"
+              :to="item.path"
+              class="nav-item"
+              :class="{ active: $route.path === item.path }"
+            >
+              <el-icon class="nav-icon">
+                <component :is="item.icon" v-if="item.icon" />
+                <span v-else class="nav-emoji">{{ item.emoji }}</span>
+              </el-icon>
+              <span>{{ item.label }}</span>
+            </router-link>
+          </template>
         </template>
 
         <template v-else>
-          <div v-if="visibleToolsNav.video.length" class="nav-group-label">视频下载</div>
-          <router-link
-            v-for="item in visibleToolsNav.video"
-            :key="item.path"
-            :to="item.path"
-            class="nav-item"
-            :class="{ active: $route.path === item.path }"
-          >
-            <el-icon class="nav-icon">
-              <component :is="item.icon" v-if="item.icon" />
-              <span v-else class="nav-emoji">{{ item.emoji }}</span>
-            </el-icon>
-            <span>{{ item.label }}</span>
-          </router-link>
-
-          <div v-if="visibleToolsNav.music.length" class="nav-group-label">音乐</div>
-          <router-link
-            v-for="item in visibleToolsNav.music"
-            :key="item.path"
-            :to="item.path"
-            class="nav-item"
-            :class="{ active: $route.path === item.path }"
-          >
-            <el-icon class="nav-icon"><component :is="item.icon" /></el-icon>
-            <span>{{ item.label }}</span>
-          </router-link>
-
-          <div v-if="visibleToolsNav.generate.length" class="nav-group-label">生成</div>
-          <router-link
-            v-for="item in visibleToolsNav.generate"
-            :key="item.path"
-            :to="item.path"
-            class="nav-item"
-            :class="{ active: $route.path === item.path }"
-          >
-            <el-icon class="nav-icon"><component :is="item.icon" /></el-icon>
-            <span>{{ item.label }}</span>
-          </router-link>
-
-          <div v-if="visibleToolsNav.image.length" class="nav-group-label">图片</div>
-          <router-link
-            v-for="item in visibleToolsNav.image"
-            :key="item.path"
-            :to="item.path"
-            class="nav-item"
-            :class="{ active: $route.path === item.path }"
-          >
-            <el-icon class="nav-icon">
-              <component :is="item.icon" v-if="item.icon" />
-              <span v-else class="nav-emoji">{{ item.emoji }}</span>
-            </el-icon>
-            <span>{{ item.label }}</span>
-          </router-link>
-
-          <div v-if="visibleToolsNav.video2.length" class="nav-group-label">视频</div>
-          <router-link
-            v-for="item in visibleToolsNav.video2"
-            :key="item.path"
-            :to="item.path"
-            class="nav-item"
-            :class="{ active: $route.path === item.path }"
-          >
-            <el-icon class="nav-icon"><component :is="item.icon" /></el-icon>
-            <span>{{ item.label }}</span>
-          </router-link>
-
-          <div v-if="visibleToolsNav.settings.length" class="nav-group-label">设置</div>
-          <router-link
-            v-for="item in visibleToolsNav.settings"
-            :key="item.path"
-            :to="item.path"
-            class="nav-item"
-            :class="{ active: $route.path === item.path }"
-          >
-            <el-icon class="nav-icon"><component :is="item.icon" /></el-icon>
-            <span>{{ item.label }}</span>
-          </router-link>
-
+          <template v-for="g in visibleToolsGroups" :key="g.key">
+            <div v-if="g.items.length" class="nav-group-label">{{ g.label }}</div>
+            <router-link
+              v-for="item in g.items"
+              :key="item.path"
+              :to="item.path"
+              class="nav-item"
+              :class="{ active: $route.path === item.path }"
+            >
+              <el-icon class="nav-icon">
+                <component :is="item.icon" v-if="item.icon" />
+                <span v-else class="nav-emoji">{{ item.emoji }}</span>
+              </el-icon>
+              <span>{{ item.label }}</span>
+            </router-link>
           </template>
+        </template>
       </nav>
 
       <div class="sidebar-footer">
@@ -210,6 +93,24 @@ import {
   Menu, Fold, Expand,
 } from '@element-plus/icons-vue';
 import { GetBuildTime } from './wailsjs/go/app/App.js';
+
+// 侧边栏分组定义
+const TEXT_GROUPS = [
+  { key: 'encode',  label: '编码',   icon: 'Link' },
+  { key: 'process', label: '处理',   icon: 'Operation' },
+  { key: 'format',  label: '格式',   icon: 'MagicStick' },
+  { key: 'file',    label: '文件',   icon: 'Folder' },
+  { key: 'codeGen', label: '代码生成', icon: 'Memo' },
+  { key: 'system',  label: '系统工具', icon: 'SetUp' },
+];
+const TOOLS_GROUPS = [
+  { key: 'video',    label: '视频下载', icon: 'Monitor' },
+  { key: 'music',    label: '音乐',   icon: 'Headset' },
+  { key: 'generate', label: '生成',   icon: 'SetUp' },
+  { key: 'image',    label: '图片',   icon: 'Picture' },
+  { key: 'video2',   label: '视频',   icon: 'Film' },
+  { key: 'settings', label: '设置',   icon: 'Setting' },
+];
 
 export default {
   name: 'App',
@@ -260,7 +161,6 @@ export default {
           { path: '/SqlTools',          label: 'SQL工具',  icon: 'Histogram' },
         ],
         file: [
-          { path: '/textFile',          label: '文件处理', icon: 'Folder' },
           { path: '/rename',            label: '重命名',   icon: 'Edit' },
           { path: '/fileSplitMerge',    label: '分割合并', icon: 'Crop' },
           { path: '/fileSync',          label: '文件同步', icon: 'Connection' },
@@ -335,6 +235,13 @@ export default {
         settings: filterFn(this.toolsNav.settings),
       };
     },
+    // 按分组定义顺序输出可见分组
+    visibleTextGroups() {
+      return TEXT_GROUPS.map(g => ({ ...g, items: this.visibleTextNav[g.key] || [] }));
+    },
+    visibleToolsGroups() {
+      return TOOLS_GROUPS.map(g => ({ ...g, items: this.visibleToolsNav[g.key] || [] }));
+    },
   },
   methods: {
     loadHiddenMenus() {
@@ -361,28 +268,12 @@ export default {
       }
     },
     buildMenuGroups() {
-      const textGroupDefs = [
-        { key: 'encode',  label: '编码',   icon: 'Link' },
-        { key: 'process', label: '处理',   icon: 'Operation' },
-        { key: 'format',  label: '格式',   icon: 'MagicStick' },
-        { key: 'file',    label: '文件',   icon: 'Folder' },
-        { key: 'codeGen', label: '代码生成', icon: 'Memo' },
-        { key: 'system',  label: '系统工具', icon: 'SetUp' },
-      ];
-      const toolsGroupDefs = [
-        { key: 'video',    label: '视频下载', icon: 'Monitor' },
-        { key: 'music',    label: '音乐',   icon: 'Headset' },
-        { key: 'generate', label: '生成',   icon: 'SetUp' },
-        { key: 'image',    label: '图片',   icon: 'Picture' },
-        { key: 'video2',   label: '视频',   icon: 'Film' },
-        { key: 'settings', label: '设置',   icon: 'Setting' },
-      ];
       const groups = [];
-      textGroupDefs.forEach(g => {
+      TEXT_GROUPS.forEach(g => {
         const items = this.textNav[g.key] || [];
         if (items.length) groups.push({ tab: 'text', label: g.label, icon: g.icon, items: [...items] });
       });
-      toolsGroupDefs.forEach(g => {
+      TOOLS_GROUPS.forEach(g => {
         const items = this.toolsNav[g.key] || [];
         if (items.length) groups.push({ tab: 'tools', label: g.label, icon: g.icon, items: [...items] });
       });
@@ -409,7 +300,7 @@ export default {
         const allTextPaths = [
           '/textCommonEncode',
           '/symmetricCrypto',
-          '/textBothEnds','/textFormat','/textChar','/textFile',
+          '/textBothEnds','/textFormat','/textChar',
           '/timeConvert','/tpl','/categorizeFiles','/JsonTableView',
           '/JavaTools','/cmdExecute','/SqlTools',
           '/TextBasicTools','/cronExp','/fileSync','/salary',

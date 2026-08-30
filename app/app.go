@@ -159,33 +159,6 @@ func (a *App) CopyToClipboard(text string) error {
 	return clipboard.WriteAll(text)
 }
 
-// FileEncode 文件编码处理
-func (a *App) FileEncode(plainText string, opType string) string {
-	if len(plainText) == 0 {
-		return plainText
-	}
-
-	opType = strings.ToLower(strings.TrimSpace(opType))
-
-	switch opType {
-	case "md5":
-		return fmt.Sprintf("%x", md5.Sum([]byte(plainText)))
-	case "sha1":
-		hash := sha1.Sum([]byte(plainText))
-		return hex.EncodeToString(hash[:])
-	case "sha256":
-		hash := sha256.Sum256([]byte(plainText))
-		return hex.EncodeToString(hash[:])
-	case "sha512":
-		hash := sha512.Sum512([]byte(plainText))
-		return hex.EncodeToString(hash[:])
-	case "去除空格", "trim space":
-		return strings.Join(strings.Fields(plainText), " ")
-	default:
-		return plainText
-	}
-}
-
 // TextEncode 文本编码解码
 func (a *App) TextEncode(plainText string, opType string) string {
 	if len(plainText) == 0 {
