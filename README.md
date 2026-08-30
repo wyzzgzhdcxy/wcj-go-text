@@ -51,7 +51,7 @@
 | `N_m3u8DL-RE` | [N_m3u8DL-RE](https://github.com/nilaoda/N_m3u8DL-RE) | `M3U8 下载`：m3u8 流下载与合成 |
 | `edge-tts` | Python 包：`pip install edge-tts` | `文字转语音`：本地语音合成 |
 | `wails` | `go install github.com/wailsapp/wails/v2/cmd/wails@v2.15.0` | `应用生成`：调用 `wails build` 编译模板生成独立 exe（需同时具备 Go 工具链） |
-| `git` | [Git](https://git-scm.com/) | 内置 Git 工具函数（clone / pull / push / add / commit，SSH 推送时还会调用 `ssh`） |
+| `git` | [Git](https://git-scm.com/) | （预留，当前无功能调用）`golang/utils/git.go` 内置的 clone / pull / push / add / commit 工具函数，SSH 推送时还会调用 `ssh` |
 
 ### Windows 系统自带命令（无需额外安装）
 
