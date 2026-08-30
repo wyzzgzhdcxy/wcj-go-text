@@ -14,6 +14,7 @@ function getLastRoute() {
 
 const routeDefs = [
     {path: '/textCommonEncode', component: () => import('../textCommonEncode.vue'), meta: { title: '常用编码' }},
+    {path: '/symmetricCrypto', component: () => import('../symmetricCrypto.vue'), meta: { title: '对称加密' }},
     {path: '/textBothEnds', component: () => import('../textBothEnds.vue'), meta: { title: '文本两端' }},
     {path: '/textSort', component: () => import('../textSort.vue'), meta: { title: '文本排序' }},
     {path: '/textRemove', component: () => import('../textRemove.vue'), meta: { title: '去除文本' }},

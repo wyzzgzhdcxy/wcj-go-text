@@ -245,6 +245,7 @@ export default {
       textNav: {
         encode: [
           { path: '/textCommonEncode', label: '常用编码', icon: 'Link' },
+          { path: '/symmetricCrypto', label: '对称加密', icon: 'Lock' },
           { path: '/crypto_encryption',label: '加解密',   icon: 'Key' },
         ],
         process: [
@@ -410,6 +411,7 @@ export default {
         ];
         const allTextPaths = [
           '/textCommonEncode',
+          '/symmetricCrypto',
           '/textBothEnds','/textSort','/textRemove',
           '/textFormat','/textChar','/textFile',
           '/timeConvert','/tpl','/categorizeFiles','/JsonTableView',

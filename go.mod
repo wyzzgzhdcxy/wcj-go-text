@@ -17,6 +17,7 @@ require (
 	github.com/lionsoul2014/ip2region/binding/golang v0.0.0-20260814054437-800d19424237
 	github.com/robfig/cron v1.2.0
 	github.com/spf13/viper v1.21.0
+	github.com/tjfoc/gmsm v1.4.1
 	github.com/wailsapp/wails/v2 v2.15.0
 	github.com/wyzzgzhdcxy/wcj-go-common v0.0.0-20260829083810-d65d972deba4
 	golang.org/x/crypto v0.55.0
@@ -63,7 +64,6 @@ require (
 	github.com/srwiley/oksvg v0.0.0-20221011165216-be6e8873101c // indirect
 	github.com/srwiley/rasterx v0.0.0-20220730225603-2ab79fcdd4ef // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
-	github.com/tjfoc/gmsm v1.4.1 // indirect
 	github.com/tkrajina/go-reflector v0.5.8 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
