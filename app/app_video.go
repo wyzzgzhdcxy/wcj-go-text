@@ -126,17 +126,16 @@ func (a *App) GetDirContents(dirPath string) ([]FileItem, error) {
 
 	var items []FileItem
 	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		info, err := entry.Info()
 		var fileSize int64
-		if err == nil {
-			fileSize = info.Size()
+		if !entry.IsDir() {
+			info, err := entry.Info()
+			if err == nil {
+				fileSize = info.Size()
+			}
 		}
 		items = append(items, FileItem{
 			Name:     entry.Name(),
-			IsDir:    false,
+			IsDir:    entry.IsDir(),
 			FileSize: fileSize,
 		})
 	}
