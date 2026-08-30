@@ -10,46 +10,43 @@ import (
 	"github.com/wyzzgzhdcxy/wcj-go-common/core"
 )
 
-func PngToIcon(pngPath string) {
+func PngToIcon(pngPath string) error {
 	gifPath := strings.TrimSuffix(pngPath, "png") + "gif"
 	bmpPath := strings.TrimSuffix(pngPath, "png") + "bmp"
-	webpPath := strings.TrimSuffix(pngPath, "png") + "webp"
-	PngToIcon1(pngPath)
-	_ = ConvertImage(pngPath, gifPath)
-	_ = ConvertImage(pngPath, bmpPath)
-	_ = ConvertImage(pngPath, webpPath)
+	if err := PngToIcon1(pngPath); err != nil {
+		return err
+	}
+	if err := ConvertImage(pngPath, gifPath); err != nil {
+		return err
+	}
+	return ConvertImage(pngPath, bmpPath)
 }
 
-func PngToIcon1(pngPath string) {
+func PngToIcon1(pngPath string) error {
 	pngFile, err := os.Open(pngPath)
 	if err != nil {
-		fmt.Println("打开PNG文件失败:", err)
-		return
+		return fmt.Errorf("打开PNG文件失败: %v", err)
 	}
 	defer core.Close(pngFile)
 	img, err := png.Decode(pngFile)
 	if err != nil {
-		fmt.Println("解码PNG失败:", err)
-		return
+		return fmt.Errorf("解码PNG失败: %v", err)
 	}
 	icoPath := strings.TrimSuffix(pngPath, "png") + "ico"
 	icoFile, err := os.Create(icoPath)
 	if err != nil {
-		fmt.Println("创建ICO文件失败:", err)
-		return
+		return fmt.Errorf("创建ICO文件失败: %v", err)
 	}
 	defer core.Close(icoFile)
-	err = ico.Encode(icoFile, img)
-	if err != nil {
-		fmt.Println("转换ICO失败:", err)
-		return
+	if err = ico.Encode(icoFile, img); err != nil {
+		return fmt.Errorf("转换ICO失败: %v", err)
 	}
-	fmt.Println("成功将PNG转换为ICO:", icoPath)
+	return nil
 }
 
-func PngToJpg(pngPath string) {
+func PngToJpg(pngPath string) error {
 	jpgPath := strings.TrimSuffix(pngPath, "png") + "jpg"
-	_ = ConvertImage(pngPath, jpgPath)
+	return ConvertImage(pngPath, jpgPath)
 }
 
 func Font2Image(content string, size int, pngPath string) {

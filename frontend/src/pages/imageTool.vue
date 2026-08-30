@@ -4,6 +4,20 @@ table {
   border-collapse: collapse;
 }
 
+.input-label {
+  display: inline-block;
+  font-size: 13px;
+  color: #909399;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.preview-img {
+  max-width: 200px;
+  max-height: 200px;
+  display: block;
+  margin: 8px auto;
+}
 </style>
 
 <template xmlns="http://www.w3.org/1999/html">
@@ -18,14 +32,14 @@ table {
             </el-input>
           </td>
           <td>
-            <el-input placeholder="图片大小" v-model="imgSize" @input="font2Image">
-              <template #prepend>图片大小</template>
-            </el-input>
+            <span class="input-label">图片大小</span>
+            <el-input-number v-model="imgSizeRaw" :min="16" :max="1920" :step="16"
+                             controls-position="right" @change="font2Image"/>
           </td>
           <td>
-            <el-input placeholder="圆角半径" type="number" v-model="cornerRadius" @input="font2Image">
-              <template #prepend>圆角半径</template>
-            </el-input>
+            <span class="input-label">圆角半径</span>
+            <el-input-number v-model="cornerRadius" :min="0" :max="1000"
+                             controls-position="right" @change="font2Image"/>
           </td>
         </tr>
         </tbody>
@@ -46,9 +60,9 @@ table {
         </td>
       </tr>
       <tr>
-        <td><img v-show="!!pngUrl.length" :src="pngUrl" alt="png图片"></td>
-        <td><img v-show="!!jpgUrl.length" :src="jpgUrl" alt="jpg图片"></td>
-        <td><img v-show="!!icoUrl.length" :src="icoUrl" alt="ico图片"></td>
+        <td><img v-show="!!pngUrl.length" class="preview-img" :src="pngUrl" alt="png图片"></td>
+        <td><img v-show="!!jpgUrl.length" class="preview-img" :src="jpgUrl" alt="jpg图片"></td>
+        <td><img v-show="!!icoUrl.length" class="preview-img" :src="icoUrl" alt="ico图片"></td>
       </tr>
       <tr>
         <td colspan="3">
@@ -91,72 +105,59 @@ export default {
     }
   },
 
-  computed: {
-    imgSize: {
-      get() {
-        return String(this.imgSizeRaw)
-      },
-      set(newValue) {
-        if (newValue === '' || newValue == null) {
-          this.imgSizeRaw = 0
-          return
-        }
-        const n = parseInt(newValue, 10)
-        if (isNaN(n) || n < 0) {
-          this.imgSizeRaw = 0
-        } else if (n > 1920) {
-          this.imgSizeRaw = 1920
-        } else {
-          this.imgSizeRaw = n
-        }
-      }
-    }
-  },
-
-
   mounted() {
     this.font2Image()
   },
 
   methods: {
     async selectFile() {
-      let that = this;
       try {
         const result = await SelectFile()
         if (result) {
-          that.pngPath = result
+          this.pngPath = result
         }
       } catch (error) {
-        console.error('选择目录失败:', error)
+        console.error('选择文件失败:', error)
+        this.$message.error('选择文件失败: ' + error)
       }
     },
     convertPng() {
-      let that = this;
-      PngToIcon(this.pngPath).then(result => {
+      if (!this.pngPath) {
+        this.$message.warning('请先导入要转换的 PNG 图片')
+        return
+      }
+      PngToIcon(this.pngPath).then(() => {
         ElNotification({
           title: 'png图片格式转换结果',
-          message: result,
+          message: '转换成功（ICO/GIF/BMP 已生成在原图片目录）',
           position: 'bottom-right',
           type: 'success',
+        })
+      }).catch(error => {
+        ElNotification({
+          title: 'png图片格式转换结果',
+          message: '转换失败: ' + error,
+          position: 'bottom-right',
+          type: 'error',
         })
       })
     },
     openExplorer() {
-      OpenImgExplorer()
+      OpenImgExplorer().catch(error => {
+        this.$message.error('打开图片目录失败: ' + error)
+      })
     },
     font2Image() {
-      let that = this;
-      if (that.imgText.length === 0 || that.imgSizeRaw === 0) {
+      if (!this.imgText.length || this.imgSizeRaw === 0) {
         return;
       }
-      that.result = ''
-      let corner = isNaN(that.cornerRadius) ? 10 : Number(that.cornerRadius);
-      Font2Image(that.imgText, that.imgSizeRaw, corner).then(result => {
-        that.pngUrl = result.pngUrl
-        that.icoUrl = result.icoUrl
-        that.jpgUrl = result.jpgUrl
+      const corner = isNaN(Number(this.cornerRadius)) ? 10 : Number(this.cornerRadius);
+      Font2Image(this.imgText, this.imgSizeRaw, corner).then(result => {
+        this.pngUrl = result.pngUrl || ''
+        this.icoUrl = result.icoUrl || ''
+        this.jpgUrl = result.jpgUrl || ''
       }).catch(err => {
-        that.$message.error("图片生成异常:" + err)
+        this.$message.error("图片生成异常:" + err)
       })
     }
   }

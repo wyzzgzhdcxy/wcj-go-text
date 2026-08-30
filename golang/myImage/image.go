@@ -37,6 +37,48 @@ func sha256Hash(s string) string {
 	return hex.EncodeToString(h.Sum(nil))[:16]
 }
 
+// isEmojiText 判断文本是否包含 emoji 字符（注意不能只按高位判断，
+// CJK 汉字区从 0x2E80 起也是高位码点）
+func isEmojiText(text string) bool {
+	for _, r := range text {
+		if r >= 0x1F000 || (r >= 0x2190 && r <= 0x2BFF) || r == 0xFE0F {
+			return true
+		}
+	}
+	return false
+}
+
+// pickFontPath 按内容选择字体：emoji 字符用 emoji 字体；
+// 普通文字（含中文）用中文字体，emoji 字体没有 CJK 字形，
+// 之前统一用 emoji 字体导致中文被渲染成空白/方块。
+func pickFontPath(text string) string {
+	fontLib := core.GetTempDir() + "/font_lib"
+	if isEmojiText(text) {
+		emojiFont := filepath.Join(fontLib, "EmojiOneColor.otf")
+		if _, err := os.Stat(emojiFont); err == nil {
+			return emojiFont
+		}
+		return "C:/Windows/Fonts/seguiemj.ttf"
+	}
+	for _, p := range []string{
+		filepath.Join(fontLib, "方正粗黑宋简体.ttf"),
+		"C:/Windows/Fonts/simhei.ttf",
+	} {
+		if _, err := os.Stat(p); err == nil {
+			return p
+		}
+	}
+	return "C:/Windows/Fonts/seguiemj.ttf"
+}
+
+// DataUrl 把文件内容包装成 data URL（data:mime;base64,xxx）
+func DataUrl(res FileRes) string {
+	if res.MimeType == "" || res.Encoded == "" {
+		return ""
+	}
+	return "data:" + res.MimeType + ";base64," + res.Encoded
+}
+
 func TextToPng(pngPath string, content string, size int) {
 	firstLetter, _ := utf8.DecodeRuneInString(content)
 	fontPath := fmt.Sprintf("%s/font_lib/方正粗黑宋简体.ttf", core.GetTempDir())
@@ -128,13 +170,10 @@ func DrawStringAnchoredWithFilename(text string, imageSize int, cornerRadius flo
 
 	width, height := imageSize, imageSize
 
-	emojiFontPath := fmt.Sprintf("%s/font_lib/EmojiOneColor.otf", core.GetTempDir())
-	if _, err := os.Stat(emojiFontPath); err != nil {
-		emojiFontPath = "C:/Windows/Fonts/seguiemj.ttf"
-	}
-	fmt.Printf("使用字体: %s\n", emojiFontPath)
+	fontPath := pickFontPath(text)
+	fmt.Printf("使用字体: %s\n", fontPath)
 
-	fontFile, err := os.ReadFile(emojiFontPath)
+	fontFile, err := os.ReadFile(fontPath)
 	if err != nil {
 		fmt.Printf("字体文件读取失败: %v\n", err)
 		return
