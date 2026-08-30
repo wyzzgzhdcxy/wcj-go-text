@@ -13,13 +13,6 @@
         <span v-if="!checking">🔄 开始检测</span>
         <span v-else>检测中...</span>
       </el-button>
-      <el-button v-if="results.length > 0" type="danger"
-                 @click="confirmRemove">
-        🗑️ 备份用户环境变量
-      </el-button>
-      <el-button @click="showBackupDialog = true">
-        💾 恢复用户环境变量
-      </el-button>
     </div>
 
     <!-- 检测结果 -->
@@ -100,80 +93,20 @@
       </div>
     </div>
 
-    <!-- 恢复环境备份对话框 -->
-    <el-dialog
-        title="恢复环境变量备份"
-        v-model="showBackupDialog"
-        width="700px"
-        :close-on-click-modal="false"
-        @open="loadBackups"
-    >
-      <div v-if="loadingBackups" style="text-align: center; padding: 40px;">
-        <el-icon class="is-loading" style="font-size: 32px;">
-          <Loading/>
-        </el-icon>
-        <p style="margin-top: 12px; color: #909399;">加载备份列表...</p>
-      </div>
-
-      <div v-else-if="backups.length === 0" style="text-align: center; padding: 40px;">
-        <div style="font-size: 48px; color: #909399;">📦</div>
-        <p style="margin-top: 12px; color: #909399;">暂无备份文件</p>
-      </div>
-
-      <div v-else>
-        <el-alert
-            title="注意：恢复环境变量将覆盖当前设置"
-            type="warning"
-            :closable="false"
-            show-icon
-            style="margin-bottom: 16px;">
-        </el-alert>
-
-        <el-table :data="backups" style="width: 100%;" stripe>
-          <el-table-column prop="name" label="备份文件名" min-width="180"/>
-          <el-table-column prop="modified" label="修改时间" width="160"/>
-          <el-table-column prop="size" label="大小" width="100">
-            <template #default="scope">
-              {{ formatFileSize(scope.row.size) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="120">
-            <template #default="scope">
-              <el-button type="primary" size="small" @click="restoreBackup(scope.row)" :loading="restoring">
-                恢复
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-      </div>
-
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="showBackupDialog = false">关闭</el-button>
-        </span>
-      </template>
-    </el-dialog>
+    <!-- 恢复环境备份对话框（已移至环境变量页面） -->
   </div>
 </template>
 
 <script setup>
 import {ref} from 'vue';
-import {ElMessage, ElMessageBox} from 'element-plus';
-import {Loading} from '@element-plus/icons-vue';
+import {ElMessage} from 'element-plus';
 
 // 导入 Wails 后端方法
 import {CheckEnvironment} from '../wailsjs/go/app/App.js';
 
 // 数据
 const checking = ref(false);
-const removing = ref(false);
-const restoring = ref(false);
 const results = ref([]);
-const showRemoveDialog = ref(false);
-const showBackupDialog = ref(false);
-const selectedEnvs = ref([]);
-const backups = ref([]);
-const loadingBackups = ref(false);
 
 // 检查环境
 async function checkEnvironment() {
@@ -186,27 +119,6 @@ async function checkEnvironment() {
     ElMessage.error('环境检测失败: ' + error);
   } finally {
     checking.value = false;
-  }
-}
-
-// 确认移除环境变量
-async function confirmRemove() {
-  try {
-    removing.value = true;
-    try {
-      // 导入并调用 RemoveEnvConfigs 方法
-      const {RemoveEnvConfigs} = await import('../wailsjs/go/app/App.js');
-      await RemoveEnvConfigs(selectedEnvs.value);
-      ElMessage.success('用户环境变量备份成功');
-      showRemoveDialog.value = false;
-    } catch (error) {
-      console.error('用户环境变量备份失败:', error);
-      ElMessage.error('用户环境变量备份失败: ' + error);
-    } finally {
-      removing.value = false;
-    }
-  } catch {
-    // 用户取消操作
   }
 }
 
@@ -271,66 +183,6 @@ function getInstalledCount() {
 // 获取未安装数量
 function getNotInstalledCount() {
   return results.value.filter(item => item.status === 'not_installed').length;
-}
-
-// 加载备份列表
-async function loadBackups() {
-  loadingBackups.value = true;
-  try {
-    const {GetEnvBackups} = await import('../wailsjs/go/app/App.js');
-    const result = await GetEnvBackups({});
-    backups.value = result.backups || [];
-  } catch (error) {
-    console.error('加载备份列表失败:', error);
-    ElMessage.error('加载备份列表失败: ' + error);
-  } finally {
-    loadingBackups.value = false;
-  }
-}
-
-// 恢复备份
-async function restoreBackup(backup) {
-  try {
-    await ElMessageBox.confirm(
-        `确定要恢复备份 "${backup.name}" 吗？此操作将覆盖当前环境变量设置。`,
-        '确认恢复',
-        {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning',
-        }
-    );
-
-    restoring.value = true;
-    try {
-      const {RestoreEnvBackup} = await import('../wailsjs/go/app/App.js');
-      await RestoreEnvBackup({backupFile: backup.path});
-
-      ElMessage.success('环境变量恢复成功,请重启应用使更改生效');
-      showBackupDialog.value = false;
-
-      // 延迟2秒后重新检测环境
-      setTimeout(async () => {
-        await checkEnvironment();
-      }, 2000);
-    } catch (error) {
-      console.error('恢复备份失败:', error);
-      ElMessage.error('恢复备份失败: ' + error);
-    } finally {
-      restoring.value = false;
-    }
-  } catch {
-    // 用户取消操作
-  }
-}
-
-// 格式化文件大小
-function formatFileSize(bytes) {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
 }
 
 // 组件挂载时自动检测

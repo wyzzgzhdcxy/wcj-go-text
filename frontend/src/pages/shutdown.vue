@@ -146,18 +146,6 @@
       </div>
     </div>
 
-    <!-- 屏幕工具 -->
-    <div class="shutdown-card">
-      <div class="card-title">🖥️ 屏幕工具</div>
-      <div class="shutdown-option">
-        <label class="option-label">屏幕控制：</label>
-        <div class="option-row">
-          <el-button type="info" @click="turnOffDisplay">熄灭屏幕</el-button>
-        </div>
-        <div class="warning-text">提示：点击按钮立即关闭显示器</div>
-      </div>
-    </div>
-
     <!-- 取消关机 -->
     <div class="shutdown-card">
       <div class="card-title">❌ 取消关机</div>
@@ -178,7 +166,7 @@
 </template>
 
 <script>
-import {ShutdownAfterSeconds, ShutdownAt, CancelShutdown, TurnOffDisplayString} from "../wailsjs/go/app/App.js";
+import {ShutdownAfterSeconds, ShutdownAt, CancelShutdown} from "../wailsjs/go/app/App.js";
 import {ElMessage} from 'element-plus';
 import dayjs from 'dayjs';
 
@@ -239,14 +227,6 @@ export default {
     cancelShutdown() {
       let that = this;
       CancelShutdown().then(res => {
-        that.showResult(res);
-      }).catch(err => {
-        that.showResult('错误: ' + err);
-      });
-    },
-    turnOffDisplay() {
-      let that = this;
-      TurnOffDisplayString().then(res => {
         that.showResult(res);
       }).catch(err => {
         that.showResult('错误: ' + err);

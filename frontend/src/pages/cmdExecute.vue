@@ -33,10 +33,15 @@ table {
 
 <template>
   <div style="width: 100%">
+    <!-- 屏幕工具 -->
     <div class="function-group" style="width: 600px">
-      <div class="function-title">常用工具</div>
-      <el-button type="success" v-on:click="startEnvironment('StartEnvironment')">打开环境变量编辑器</el-button>
-      <el-button type="success" v-on:click="startCpuZ()">cpu-z</el-button>
+      <div class="function-title">屏幕工具</div>
+      <div class="function-description">
+        点击按钮立即熄灭显示器，移动鼠标或按任意键即可重新点亮屏幕：
+      </div>
+      <div class="button-group">
+        <el-button type="info" v-on:click="turnOffDisplay">🖥️ 熄灭屏幕</el-button>
+      </div>
     </div>
 
     <!-- 注册表启动项 -->
@@ -67,7 +72,7 @@ table {
 </template>
 
 <script>
-import {BackUpEnvFiles, CpuZ, OpenRegistryStartup, RestoreEnvFiles, StartEnvironment} from "../wailsjs/go/app/App.js";
+import {BackUpEnvFiles, OpenRegistryStartup, RestoreEnvFiles, TurnOffDisplayString} from "../wailsjs/go/app/App.js";
 import {ElNotification} from "element-plus";
 import {DocumentCopy} from "@element-plus/icons-vue";
 
@@ -123,12 +128,12 @@ export default {
       });
     },
 
-    startEnvironment(event) {
-      StartEnvironment()
-    },
-
-    startCpuZ(event) {
-      CpuZ()
+    turnOffDisplay() {
+      TurnOffDisplayString().then(res => {
+        this.$message.success(res || "已熄灭屏幕");
+      }).catch(err => {
+        this.$message.error("熄灭屏幕失败: " + err);
+      });
     },
 
     async openRegistryStartup() {

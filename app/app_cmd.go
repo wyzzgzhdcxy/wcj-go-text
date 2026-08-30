@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/wyzzgzhdcxy/wcj-go-common/core"
+	"golang.org/x/sys/windows/registry"
 	"wcj-go-text/golang/cmdWrapper"
 	"wcj-go-text/golang/sqllite"
-	"wcj-go-text/golang/utils"
 )
 
 type EnvCheckResult struct {
@@ -173,18 +174,11 @@ type EnvVar struct {
 	Value string `json:"value"`
 }
 
-// GetUserEnvVars 获取用户环境变量
+// GetUserEnvVars 获取用户环境变量（直接读注册表 HKCU\Environment，与系统
+// 环境变量编辑器一致。cmd set 返回的是进程合并后的环境，会混入系统变量和
+// 进程自身的变量，导致列表比真实的用户变量多很多）
 func (a *App) GetUserEnvVars() []EnvVar {
-	cmd := core.Command("cmd", "/C", "set")
-	output, _ := cmd.Output()
-	var result []EnvVar
-	for _, line := range strings.Split(string(output), "\n") {
-		line = strings.TrimSpace(line)
-		if idx := strings.Index(line, "="); idx > 0 {
-			result = append(result, EnvVar{Name: line[:idx], Value: line[idx+1:]})
-		}
-	}
-	return result
+	return queryRegistryEnvVars(`HKCU\Environment`)
 }
 
 // GetProcessEnvVars 获取进程环境变量
@@ -204,36 +198,52 @@ func (a *App) GetSystemEnvVars() []EnvVar {
 	return queryRegistryEnvVars(`HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment`)
 }
 
-// queryRegistryEnvVars 通过 reg query 读取注册表项下的所有显式值。
-// reg query 的输出行格式为 "名称<空白>REG_SZ<空白>值"（没有等号），
-// PATH/Path 等 REG_EXPAND_SZ 值保持未展开形式。
+// queryRegistryEnvVars 通过注册表 API 直接读取项下所有字符串值
+// （REG_SZ / REG_EXPAND_SZ，保持未展开形式）。
+// 不用 reg query 子进程：其输出为控制台 OEM 代码页（中文系统为 GBK），
+// 直接按 UTF-8 解析会导致含中文的变量名/值显示乱码。
 func queryRegistryEnvVars(regPath string) []EnvVar {
-	cmd := core.Command("reg", "query", regPath)
-	output, err := cmd.Output()
+	root, sub := splitRegPath(regPath)
+	if root == 0 {
+		return nil
+	}
+	key, err := registry.OpenKey(root, sub, registry.QUERY_VALUE)
+	if err != nil {
+		return nil
+	}
+	defer key.Close()
+	names, err := key.ReadValueNames(-1)
 	if err != nil {
 		return nil
 	}
 	var result []EnvVar
-	for _, line := range strings.Split(string(output), "\n") {
-		trimmed := strings.TrimSpace(strings.TrimRight(line, "\r"))
-		idx := strings.Index(trimmed, "REG_")
-		if idx <= 0 {
+	for _, name := range names {
+		if name == "" {
 			continue
 		}
-		name := strings.TrimSpace(trimmed[:idx])
-		if name == "" || name == "(Default)" {
-			continue
+		val, _, err := key.GetStringValue(name)
+		if err != nil {
+			continue // 跳过非字符串类型的值
 		}
-		// 跳过类型标记（REG_SZ / REG_EXPAND_SZ / REG_DWORD ...），剩余部分为值
-		rest := trimmed[idx:]
-		if sp := strings.IndexAny(rest, " \t"); sp < 0 {
-			continue
-		} else {
-			rest = strings.TrimSpace(rest[sp+1:])
-		}
-		result = append(result, EnvVar{Name: name, Value: rest})
+		result = append(result, EnvVar{Name: name, Value: val})
 	}
 	return result
+}
+
+// splitRegPath 解析 "HKCU\Environment" 形式的注册表路径为根键 + 子键
+func splitRegPath(regPath string) (registry.Key, string) {
+	i := strings.Index(regPath, "\\")
+	if i < 0 {
+		return 0, ""
+	}
+	sub := regPath[i+1:]
+	switch strings.ToUpper(regPath[:i]) {
+	case "HKCU", "HKEY_CURRENT_USER":
+		return registry.CURRENT_USER, sub
+	case "HKLM", "HKEY_LOCAL_MACHINE":
+		return registry.LOCAL_MACHINE, sub
+	}
+	return 0, ""
 }
 
 // DeleteUserEnvVar 删除用户环境变量
@@ -256,12 +266,57 @@ func (a *App) DeleteSystemEnvVar(name string) error {
 	return nil
 }
 
-// GetPathInfo 获取 PATH 环境变量信息
-func (a *App) GetPathInfo() map[string]string {
-	cmd := core.Command("cmd", "/C", "echo %PATH%")
-	output, _ := cmd.Output()
-	path := strings.TrimSpace(string(output))
-	return map[string]string{"path": path}
+// PathEntry PATH 环境变量条目
+type PathEntry struct {
+	Path        string `json:"path"`
+	Source      string `json:"source"`
+	IsDuplicate bool   `json:"isDuplicate"`
+}
+
+// GetPathInfo 获取 PATH 条目列表（含来源与重复标记），供前端 PATH 变量页展示
+func (a *App) GetPathInfo() []PathEntry {
+	userPath := registryEnvValue(`HKCU\Environment`, "Path")
+	systemPath := registryEnvValue(`HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment`, "Path")
+	processPath := os.Getenv("PATH")
+
+	splitPath := func(raw string) []string {
+		var out []string
+		for _, p := range strings.Split(raw, ";") {
+			if p = strings.TrimSpace(p); p != "" {
+				out = append(out, p)
+			}
+		}
+		return out
+	}
+	// 以进程 PATH（合并后的实际生效值）统计各目录出现次数，出现多次即视为重复
+	counts := make(map[string]int)
+	norm := func(p string) string {
+		return strings.ToLower(strings.TrimSuffix(strings.TrimSuffix(p, "\\"), "/"))
+	}
+	for _, p := range splitPath(processPath) {
+		counts[norm(p)]++
+	}
+
+	var result []PathEntry
+	appendEntries := func(raw, source string) {
+		for _, p := range splitPath(raw) {
+			result = append(result, PathEntry{Path: p, Source: source, IsDuplicate: counts[norm(p)] > 1})
+		}
+	}
+	appendEntries(userPath, "User")
+	appendEntries(systemPath, "System")
+	appendEntries(processPath, "Process")
+	return result
+}
+
+// registryEnvValue 读取注册表环境变量项下指定名称的值
+func registryEnvValue(regPath, name string) string {
+	for _, v := range queryRegistryEnvVars(regPath) {
+		if strings.EqualFold(v.Name, name) {
+			return v.Value
+		}
+	}
+	return ""
 }
 
 // SetEnvVars 批量设置环境变量
@@ -274,15 +329,69 @@ func (a *App) SetEnvVars(vars []EnvVar) error {
 	return nil
 }
 
-// GetEnvBackups 获取环境变量备份列表
-func (a *App) GetEnvBackups() []string {
-	return utils.GetBackupFileList()
+// EnvBackupInfo 环境变量备份信息
+type EnvBackupInfo struct {
+	Name     string `json:"name"`
+	Path     string `json:"path"`
+	Modified string `json:"modified"`
+	Size     int64  `json:"size"`
 }
 
-// RestoreEnvBackup 恢复环境变量备份
-func (a *App) RestoreEnvBackup(backupFile string) error {
-	if msg := utils.RestoreEnvVars(backupFile); msg != "" {
-		return fmt.Errorf("%s", msg)
+// envBackupRoot 环境变量备份根目录：%LOCALAPPDATA%/wtools/data/env_backups
+func envBackupRoot() string {
+	return filepath.Join(sqllite.GetAppDataDir(), "env_backups")
+}
+
+// BackupUserEnvVars 备份用户环境变量（reg export HKCU\Environment），返回备份目录
+func (a *App) BackupUserEnvVars() (string, error) {
+	dir := filepath.Join(envBackupRoot(), "user_env_"+time.Now().Format("20060102_150405"))
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return "", err
+	}
+	regFile := filepath.Join(dir, "user_env_backup.reg")
+	cmd := core.Command("reg", "export", `HKEY_CURRENT_USER\Environment`, regFile, "/y")
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return "", fmt.Errorf("备份失败: %s", strings.TrimSpace(string(output)))
+	}
+	return dir, nil
+}
+
+// GetEnvBackups 获取环境变量备份列表
+func (a *App) GetEnvBackups() []EnvBackupInfo {
+	entries, err := os.ReadDir(envBackupRoot())
+	if err != nil {
+		return nil
+	}
+	var result []EnvBackupInfo
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		info := EnvBackupInfo{Name: e.Name(), Path: filepath.Join(envBackupRoot(), e.Name())}
+		if fi, err := e.Info(); err == nil {
+			info.Modified = fi.ModTime().Format("2006-01-02 15:04:05")
+		}
+		if files, err := os.ReadDir(info.Path); err == nil {
+			for _, f := range files {
+				if fi, err := f.Info(); err == nil {
+					info.Size += fi.Size()
+				}
+			}
+		}
+		result = append(result, info)
+	}
+	return result
+}
+
+// RestoreEnvBackup 恢复用户环境变量（reg import 备份目录中的 user_env_backup.reg）
+func (a *App) RestoreEnvBackup(backupPath string) error {
+	regFile := filepath.Join(backupPath, "user_env_backup.reg")
+	if _, err := os.Stat(regFile); err != nil {
+		return fmt.Errorf("备份文件不存在: %s", regFile)
+	}
+	cmd := core.Command("reg", "import", regFile)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("恢复失败: %s", strings.TrimSpace(string(output)))
 	}
 	return nil
 }
