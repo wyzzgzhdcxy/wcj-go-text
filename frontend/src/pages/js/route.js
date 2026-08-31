@@ -28,6 +28,7 @@ const routeDefs = [
     {path: '/emojiTool', component: () => import('../emojiTool.vue'), meta: { title: 'Emoji工具' }},
     {path: '/textToImage', component: () => import('../textToImage.vue'), meta: { title: '文字生图' }},
     {path: '/textToSpeech', component: () => import('../textToSpeech.vue'), meta: { title: '文字转语音' }},
+    {path: '/barcodeTool', component: () => import('../barcodeTool.vue'), meta: { title: '二维码 / 条形码' }},
     {path: '/videoTool', component: () => import('../videoTool.vue'), meta: { title: '视频处理' }},
     {path: '/systemSetting', component: () => import('../systemSetting.vue'), meta: { title: '系统设置' }},
 

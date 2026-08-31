@@ -200,6 +200,7 @@ export default {
           { path: '/emojiTool',     label: 'Emoji工具',    icon: 'PictureFilled' },
           { path: '/textToImage',   label: '文字生图',     icon: 'PictureRounded' },
           { path: '/textToSpeech',  label: '文字转语音',   icon: 'Microphone' },
+          { path: '/barcodeTool',   label: '二维码 / 条形码', icon: 'PriceTag' },
         ],
         video2: [
           { path: '/videoTool',     label: '视频处理',     icon: 'Film' },
@@ -293,6 +294,7 @@ export default {
           '/ytdlp', '/downloadList', '/m3u8TaskDownload',
           '/musicSearch', '/musicSource',
           '/imageTool', '/emojiTool', '/textToImage', '/textToSpeech',
+          '/barcodeTool',
           '/videoTool',
         ];
         const allTextPaths = [

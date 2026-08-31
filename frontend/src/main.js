@@ -61,13 +61,13 @@ import 'element-plus/es/components/tooltip/style/css'
 
 // 只引入实际用到的图标（全量约 293 个，这里 52 个）
 import {
-  Avatar, Calendar, ChatLineRound, Coffee, Coin, Connection, Crop,
+  Avatar, Calendar, ChatLineRound, CirclePlus, Coffee, Coin, Connection, CopyDocument, Crop,
   DataAnalysis, DataLine, Delete, Document, DocumentCopy, Download, Edit,
-  Expand, Files, Film, Folder, Fold, Headset, Histogram, Iphone, Key, Link,
+  Expand, Files, Film, Folder, FolderOpened, Fold, FullScreen, Headset, Histogram, Iphone, Key, Link,
   List, Loading, Lock, MagicStick, Memo, Menu, Microphone, Monitor,
   Operation, Picture, PictureFilled, PictureRounded, Plus, Postcard,
-  PriceTag, Promotion, ScaleToOriginal, Scissor, Search, Setting, SetUp,
-  Sort, Switch, Tickets, Timer, Tools, VideoCamera, VideoPlay,
+  PriceTag, Promotion, Refresh, ScaleToOriginal, Scissor, Search, Setting, SetUp,
+  Sort, Switch, Tickets, Timer, Tools, VideoCamera, VideoPlay, ZoomIn,
 } from '@element-plus/icons-vue'
 
 const components = [
@@ -81,13 +81,13 @@ const components = [
 ]
 
 const icons = {
-  Avatar, Calendar, ChatLineRound, Coffee, Coin, Connection, Crop,
+  Avatar, Calendar, ChatLineRound, CirclePlus, Coffee, Coin, Connection, CopyDocument, Crop,
   DataAnalysis, DataLine, Delete, Document, DocumentCopy, Download, Edit,
-  Expand, Files, Film, Folder, Fold, Headset, Histogram, Iphone, Key, Link,
+  Expand, Files, Film, Folder, FolderOpened, Fold, FullScreen, Headset, Histogram, Iphone, Key, Link,
   List, Loading, Lock, MagicStick, Memo, Menu, Microphone, Monitor,
   Operation, Picture, PictureFilled, PictureRounded, Plus, Postcard,
-  PriceTag, Promotion, ScaleToOriginal, Scissor, Search, Setting, SetUp,
-  Sort, Switch, Tickets, Timer, Tools, VideoCamera, VideoPlay,
+  PriceTag, Promotion, Refresh, ScaleToOriginal, Scissor, Search, Setting, SetUp,
+  Sort, Switch, Tickets, Timer, Tools, VideoCamera, VideoPlay, ZoomIn,
 }
 
 const app = createApp(App)
