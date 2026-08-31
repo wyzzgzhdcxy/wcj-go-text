@@ -74,13 +74,17 @@ func (a *App) CleanFilename(dir string) []string {
 
 func (a *App) CategorizeFiles(dir string, categories string) map[string][]string {
 	var cats []string
-	json.Unmarshal([]byte(categories), &cats)
-	utils.CategorizeFiles(dir, cats)
-	result := make(map[string][]string)
-	for _, cat := range cats {
-		result[cat] = []string{}
+	if err := json.Unmarshal([]byte(categories), &cats); err != nil {
+		// 兼容逗号/换行分隔的纯文本输入
+		for _, s := range strings.FieldsFunc(categories, func(r rune) bool {
+			return r == ',' || r == '，' || r == '\n' || r == '\r'
+		}) {
+			if s = strings.TrimSpace(s); s != "" {
+				cats = append(cats, s)
+			}
+		}
 	}
-	return result
+	return utils.CategorizeFiles(dir, cats)
 }
 
 func (a *App) GetFilePrefixesInDir(dir string, count int) []string {

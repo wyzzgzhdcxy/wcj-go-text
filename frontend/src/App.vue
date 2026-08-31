@@ -170,7 +170,7 @@ export default {
           { path: '/JavaTools',         label: 'Java工具', icon: 'Coffee' },
         ],
         system: [
-          { path: '/cmdExecute',        label: '命令行',   icon: 'Promotion' },
+          { path: '/cmdExecute',        label: '命令执行', icon: 'Promotion' },
           { path: '/envCheck',          label: '环境检测', icon: 'ChatLineRound' },
           { path: '/envVariables',      label: '环境变量', icon: 'SetUp' },
           { path: '/shutdown',          label: '定时关机', icon: 'Timer' },

@@ -9,16 +9,14 @@ import (
 	"github.com/wyzzgzhdcxy/wcj-go-common/core"
 )
 
-// CategorizeFiles 根据提供的字符串列表（可能是文件名的某种模式或标签）来归类文件
-// 读取指定目录中的文件列表。
-// 遍历文件列表，并检查每个文件名是否与提供的字符串列表中的任何一个匹配。
-// 根据匹配情况，将文件归类到不同的集合或切片中。
-func CategorizeFiles(dir string, categories []string) core.MySet {
-	set := core.MySet{}
+// CategorizeFiles 根据提供的字符串列表（文件名前缀）归类文件到同名子目录，
+// 返回每个分类实际移动的文件列表
+func CategorizeFiles(dir string, categories []string) map[string][]string {
+	result := make(map[string][]string)
 	files, err := os.ReadDir(dir)
 	if err != nil {
 		log.Printf("读取目录异常:%s", dir)
-		return set
+		return result
 	}
 
 	for _, file := range files {
@@ -34,15 +32,16 @@ func CategorizeFiles(dir string, categories []string) core.MySet {
 					core.MkDirALl0777(dirPath)
 				}
 				err := os.Rename(filepath.Join(dir, filename), filepath.Join(dirPath, filename))
-				//set.Add(category)
 				if err != nil {
 					log.Printf("重命名文件异常:%s", filepath.Join(dir, filename))
+				} else {
+					result[category] = append(result[category], filename)
 				}
 				break // 如果一个文件只属于一个类别，则找到后跳出内层循环
 			}
 		}
 	}
-	return set
+	return result
 }
 
 // GetFilePrefixesInDir 获取目录下的文件列表的文件名的前缀，用-隔开
