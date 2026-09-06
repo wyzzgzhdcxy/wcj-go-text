@@ -28,9 +28,7 @@
 | | 环境变量 | 查看 / 删除 / 备份 / 恢复用户与系统环境变量 |
 | | 定时关机 | 定时关机与取消 |
 | | 其他 | cron 表达式、表达式计算、工资计算、时间转换、卡号工具 |
-| 视频下载 | yt-dlp 下载 | 支持 YouTube / B站等，可选格式、代理、Cookie、字幕/缩略图/章节嵌入、限速、时间段、纯音频提取 |
-| | B站视频 | B站 / YouTube 下载任务管理 |
-| | M3U8 下载 | 从网页提取 m3u8 链接并下载、实时进度 |
+| 视频下载 | M3U8 下载 | 从网页提取 m3u8 链接并下载、实时进度 |
 | 视频 | 视频处理 | 视频信息读取、截图、音频提取与转码 |
 | 音乐 | 音乐搜索 | 网易云音乐搜索（带 SQLite 缓存） |
 | | 音乐解析 | 音频 / 歌词 / 封面解析下载 |
@@ -47,8 +45,7 @@
 
 | 命令 | 来源 | 依赖它的功能 |
 |------|------|--------------|
-| `yt-dlp` | [yt-dlp](https://github.com/yt-dlp/yt-dlp)（含 `yt-dlp.exe`） | `yt-dlp 下载`、`B站视频`：视频/音频下载、格式探测、版本检查与自更新（`yt-dlp -U`） |
-| `ffmpeg`、`ffprobe` | [FFmpeg](https://ffmpeg.org/) | `视频处理`：视频信息、时长、截图、音频提取与转码；同时被 yt-dlp 用于格式检测与合并 |
+| `ffmpeg`、`ffprobe` | [FFmpeg](https://ffmpeg.org/) | `视频处理`：视频信息、时长、截图、音频提取与转码 |
 | `N_m3u8DL-RE` | [N_m3u8DL-RE](https://github.com/nilaoda/N_m3u8DL-RE) | `M3U8 下载`：m3u8 流下载与合成 |
 | `edge-tts` | Python 包：`pip install edge-tts` | `文字转语音`：本地语音合成 |
 | `wails` | `go install github.com/wailsapp/wails/v2/cmd/wails@v2.15.0` | `应用生成`：调用 `wails build` 编译模板生成独立 exe（需同时具备 Go 工具链） |
@@ -65,7 +62,6 @@
 | `rundll32` | 打开系统环境变量编辑器（`sysdm.cpl,EditEnvironmentVariables`） |
 | `shutdown` | 定时关机与取消关机 |
 | `explorer` | 用资源管理器打开目录 |
-| `where` | 在 PATH 中定位 `yt-dlp` |
 
 另外，`系统设置` 的窗口置顶功能会调用随程序分发的小工具 `TopMost_x64.exe`，需位于程序同目录或 PATH 中。
 
@@ -77,8 +73,7 @@
 
 ### 命令查找规则
 
-- 默认全部通过系统 `PATH` 解析，将上述可执行文件加入 `PATH` 即可；
-- 唯一例外是 `yt-dlp`：优先在**程序同目录**查找 `yt-dlp.exe` / `yt-dlp`，找不到再通过 `where yt-dlp` 查 `PATH`，便于绿色便携部署。
+- 默认全部通过系统 `PATH` 解析，将上述可执行文件加入 `PATH` 即可。
 
 ## 技术栈
 
@@ -102,7 +97,6 @@ wcj-go-text/
 │   ├── app_tts.go           # 文字转语音
 │   └── ...                  # 加密、图片、身份证、文件等其他功能
 ├── golang/                  # 核心实现
-│   ├── ytdlp.go             # yt-dlp 集成（含 FindYtDlp 查找逻辑）
 │   ├── m3u8.go              # M3U8 下载（调用 N_m3u8DL-RE）
 │   ├── cmdWrapper/          # 外部命令封装（reg / regedit / explorer / m3u8 等）
 │   ├── myTTS/               # edge-tts 封装
@@ -128,7 +122,7 @@ wcj-go-text/
 - **Node.js** >= 24
 - **Wails CLI** v2.15
 
-构建与开发仅需要以上三项。各**运行时功能**所需的外部命令（yt-dlp、ffmpeg、N_m3u8DL-RE、edge-tts 等）详见 [外部命令依赖](#外部命令依赖)。
+构建与开发仅需要以上三项。各**运行时功能**所需的外部命令（ffmpeg、N_m3u8DL-RE、edge-tts 等）详见 [外部命令依赖](#外部命令依赖)。
 
 ## 快速开始
 

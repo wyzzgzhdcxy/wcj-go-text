@@ -184,8 +184,6 @@ export default {
       },
       toolsNav: {
         video: [
-          { path: '/ytdlp',            label: 'yt-dlp 下载', icon: 'Monitor' },
-          { path: '/downloadList',     label: 'B站视频', icon: 'Download' },
           { path: '/m3u8TaskDownload', label: 'M3U8 下载', icon: 'VideoPlay' },
         ],
         music: [
@@ -291,7 +289,7 @@ export default {
       handler(path) {
         const toolPaths = [
           '/appGenerator',
-          '/ytdlp', '/downloadList', '/m3u8TaskDownload',
+          '/m3u8TaskDownload',
           '/musicSearch', '/musicSource',
           '/imageTool', '/emojiTool', '/textToImage', '/textToSpeech',
           '/barcodeTool',
